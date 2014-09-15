@@ -9,48 +9,99 @@ using namespace std;
 
 int main(int argc, char** argv )
 {
-    //string path_image = "koala.jpg";
-
     int histSize = 256;
 
     //reading image
-    Mat image_src, histogram_graph( 700, 700, CV_8UC3, Scalar( 255,255,255) );
+    Mat image_src, histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) ), eq_histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) ), image_dest;
 
     image_src = imread( argv[1], 0); // 0, grayscale  >0, color
+    image_dest = image_src;
 
-    vector<int> histogram(256);
-    cout << image_src.rows << "\t" << image_src.cols << endl;
-//    cout << (int)image_src.at<uchar> ( 0, 10 ) << endl;
+    //vector for histogram and eq_histogram
+    vector<int> histogram(256) ;
+    vector<int> eq_histogram(256);
+    vector<int> cdf(256);
 
+//    cout << image_src.rows << "\t" << image_src.cols << endl;
 
-    for( int i = 1 ; i < image_src.rows; i++)
-        for( int j = 1 ; j < image_src.cols; j++)
+    //creation of histogram
+    for( int i = 0 ; i < image_src.rows; i++)
+        for( int j = 0 ; j < image_src.cols; j++)
             histogram [ (int) image_src.at<uchar>(i,j) ]++;
 
     int higher = -1;
 
+    //get the maximum value
     for( vector<int>::iterator it = histogram.begin(); it != histogram.end(); it++){
         if( higher < (*it) ) higher = (*it);
 //        cout << (*it) << "\t";
     }
-
     cout << higher << endl;
-
+/*
     for( vector<int>::iterator it = histogram.begin(); it != histogram.end(); it++)
         cout << (*it) << "\t";
+*/
 
+    //Drawing Histogram
     for( int i = 0 ; i < histSize; i++) {
-        cout << " val " << i << "\t hist " << histogram[i] << endl;
+        //cout << " val " << i << "\t hist " << histogram[i] << endl;
         line( histogram_graph, Point( i, 0 ), Point( i, double(histogram[i] / 10) ) , Scalar(0,255,0), 2, 8, 0 );
     }
 
     cout << endl;
 
-    //line( histogram_graph, Point( 0, 100 ), Point(100, 100 ) , Scalar(0,255,0), 3, 8, 0 );
+    eq_histogram[0] = histogram[0];
 
-    /// Display
-    namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
-    imshow("calcHist Demo", histogram_graph );
+    int lower = 1000000;
+
+    //calculating cdf
+    for( int i = 1; i < histogram.size(); i++ ){
+        eq_histogram[i] = eq_histogram[i-1] + histogram[i];
+        if( eq_histogram[i] < lower) lower = eq_histogram[i] ;
+    }
+    for( int i = 1; i < histogram.size(); i++ ){
+        cdf[i] = ( eq_histogram[i]*255 ) / eq_histogram[254] ;
+        //cout << cdf [i] << endl;
+    }
+
+    cout << "lower : " << lower << endl;
+
+    //calculating eq_histogram
+    for( int i = 0; i < histogram.size(); i++ ){
+        eq_histogram[i] = ( (eq_histogram[i] - lower) * 255 )/ ( image_src.rows * image_src.cols - lower);
+        cout << "val " << i << " : " <<  eq_histogram[i] << endl;
+    }
+
+
+    //Drawing EQ histogram
+    for( int i = 0 ; i < histSize; i++) {
+        //cout << " val " << i << "\t hist " << histogram[i] << endl;
+        line( eq_histogram_graph, Point( i, 0 ), Point( i, double(eq_histogram[i] ) ) , Scalar(0,255,0), 2, 8, 0 );
+    }
+
+    //Updating eq image
+    for( int i =  0; i < image_src.rows; i++)
+        for( int j = 0; j < image_src.cols; j++){
+            //cout << (int) image_dest.at<uchar>(i,j) <<"//" <<  eq_histogram[ (int) image_dest.at<uchar>(i,j) ] << "\t";
+            image_dest.at<uchar>(i,j) = (uchar) eq_histogram[ (int) image_dest.at<uchar>(i,j) ];
+            //cout << (int) image_dest.at<uchar>(i,j) << endl;
+        }
+
+    cout << endl;
+
+
+    //Display
+    namedWindow("Source ", CV_WINDOW_AUTOSIZE );
+    imshow("Source ", image_src );
+
+    namedWindow("calcHist ", CV_WINDOW_AUTOSIZE );
+    imshow("calcHist ", histogram_graph );
+
+    namedWindow("EQ calcHist ", CV_WINDOW_AUTOSIZE );
+    imshow("EQ calcHist ", eq_histogram_graph );
+
+    namedWindow("Destiny ", CV_WINDOW_AUTOSIZE );
+    imshow("Destiny ", image_dest );
 
     waitKey(0);
 
