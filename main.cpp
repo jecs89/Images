@@ -31,7 +31,7 @@ int main(int argc, char** argv )
     //cout << image_height   << "\t" << image_width    << endl;
 
     //mat of destiny
-    //Mat image_dest( image_height, image_width, CV_8UC1, Scalar( 255,255,255) );
+    //Mat image_dest( image_height, image_width, CV_8UC1, Scalar( 0,0,0 ) );
     Mat image_dest = imread("image_grayscale.jpg", 0);
 
     cout << image_dest.rows << "\t" << image_dest.cols << endl;
@@ -125,6 +125,22 @@ int main(int argc, char** argv )
 */
     myfile.close();
 
+    Mat img_padded = imread("image_grayscale.jpg", 0);
+
+    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
+
+    //int w_red =
+
+    resize( img_padded, img_padded, Size(), (double)(image_width + 2) /image_width , (double)(image_height + 2)/image_height , INTER_LINEAR );
+
+    for( int i = 0; i < img_padded.rows; i++){
+        for( int j = 0; j < img_padded.cols; j++){
+            img_padded.at<uchar>(i,j) = 0;
+        }
+    }
+
+    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
+
     //Display
     namedWindow("Source ", CV_WINDOW_AUTOSIZE );
     imshow("Source ", image_src );
@@ -137,6 +153,9 @@ int main(int argc, char** argv )
 
     namedWindow("Destiny ", CV_WINDOW_AUTOSIZE );
     imshow("Destiny ", image_dest );
+
+    namedWindow("Padded ", CV_WINDOW_AUTOSIZE );
+    imshow("Padded ", img_padded );
 
     waitKey(0);
 
