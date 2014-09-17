@@ -5,9 +5,16 @@
 #include <vector>
 #include <fstream>
 #include <iomanip>
+#include <algorithm>
 
 using namespace cv;
 using namespace std;
+
+int get_median( vector<int> vint){
+    sort( vint.begin(), vint.end() );
+
+    return ( vint.size() % 2 == 0) ? vint[ (vint.size() + 1) / 2 - 1] :  ( vint[ ( vint.size() ) / 2 - 1] + vint[ ( vint.size() + 1) / 2 - 1] ) / 2 ; 
+ }
 
 int main(int argc, char** argv )
 {
@@ -154,6 +161,60 @@ int main(int argc, char** argv )
             //cout << (int)img_padded.at<uchar>(i,j) << "\n";
         } 
     }
+    
+    namedWindow("Padded ", CV_WINDOW_AUTOSIZE );
+    imshow("Padded ", img_padded );
+
+
+    imwrite("image_padded.jpg", img_padded);
+
+
+    Mat img_threshold = imread("image_padded.jpg", 0);
+    //Applying threshold
+    int thresh = 150;
+    for( int i = 0; i < img_padded.rows; i++){
+        for( int j = 0; j < img_padded.cols; j++){
+            img_threshold.at<uchar>(i,j) = ( (int) img_threshold.at<uchar>(i,j) < thresh ) ? 0 : 255;
+        }
+    }
+
+    namedWindow("Threshold ", CV_WINDOW_AUTOSIZE );
+    imshow("Threshold ", img_threshold );
+
+    imwrite("image_threshold.jpg", img_threshold);
+
+
+    Mat img_median = imread("image_padded.jpg", 0);
+
+
+    //Median Filter
+    //Mat img_median = imread("image_grayscale.jpg", 0);
+    int i = 0 ;
+    vector<int> neighborhood(9);
+    for( int i = 1; i < (img_median.rows - 1); i++ ){
+        for( int j = 1; j < (img_median.cols - 1); j++ ){
+             neighborhood[ 0 ] = img_median.at<uchar>(i-1,j-1) ;
+             neighborhood[ 1 ] = img_median.at<uchar>(i-1,j  ) ;
+             neighborhood[ 2 ] = img_median.at<uchar>(i-1,j+1) ;
+             neighborhood[ 3 ] = img_median.at<uchar>(i,j-1  ) ;
+             neighborhood[ 4 ] = img_median.at<uchar>(i  ,j  ) ;
+             neighborhood[ 5 ] = img_median.at<uchar>(i,j+1  ) ;
+             neighborhood[ 6 ] = img_median.at<uchar>(i+1,j-1) ;
+             neighborhood[ 7 ] = img_median.at<uchar>(i+1,j  ) ;
+             neighborhood[ 8 ] = img_median.at<uchar>(i+1,j+1) ; 
+
+             img_median.at<uchar>(i,j) = get_median(neighborhood);
+             //cout << i++ << endl;
+
+        }
+    }
+
+    namedWindow("Median ", CV_WINDOW_AUTOSIZE );
+    imshow("Median ", img_median );
+    
+    cout << "End" << endl;
+
+
 /*  //Writing Img Padded to file
     myfile << "Img Padded" << endl;
     for( int i = 0; i < img_padded.rows; i++){
@@ -176,10 +237,7 @@ int main(int argc, char** argv )
     imshow("EQ calcHist ", eq_histogram_graph );
 
     namedWindow("Destiny ", CV_WINDOW_AUTOSIZE );
-    imshow("Destiny ", image_dest );
-
-    namedWindow("Padded ", CV_WINDOW_AUTOSIZE );
-    imshow("Padded ", img_padded );
+    imshow("Destiny ", image_dest );  
 
     waitKey(0);
 
