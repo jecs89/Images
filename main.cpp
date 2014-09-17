@@ -4,6 +4,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <vector>
 #include <fstream>
+#include <iomanip>
 
 using namespace cv;
 using namespace std;
@@ -63,9 +64,9 @@ int main(int argc, char** argv )
 */
 
     //Drawing Histogram
-    myfile <<"Histogram \n";
+    //myfile <<"Histogram \n";
     for( int i = 0 ; i < histSize; i++) {
-        myfile << " val " << i << "\t hist " << histogram[i] << endl;
+    //    myfile << " val " << i << "\t hist " << histogram[i] << endl;
         line( histogram_graph, Point( i, 0 ), Point( i, double(histogram[i] / 10) ) , Scalar(0,255,0), 2, 8, 0 );
     }
 
@@ -76,10 +77,10 @@ int main(int argc, char** argv )
     int lower = 1000000;
 
     //calculating cdf
-    myfile <<"\nCDF\n";
+    //myfile <<"\nCDF\n";
     for( int i = 1; i < histogram.size(); i++ ){
         eq_histogram[i] = eq_histogram[i-1] + histogram[i];
-        myfile << " val " << i << "\t = " << eq_histogram[i] << endl;
+        //myfile << " val " << i << "\t = " << eq_histogram[i] << endl;
         if( eq_histogram[i] < lower) lower = eq_histogram[i] ;
     }
 
@@ -91,10 +92,10 @@ int main(int argc, char** argv )
     cout << "lower : " << lower << endl;
 
     //calculating eq_histogram
-    myfile <<"\nEQ Table\n";
+    //myfile <<"\nEQ Table\n";
     for( int i = 0; i < histogram.size(); i++ ){
         eq_histogram[i] = ( (eq_histogram[i] - lower) * 255 )/ ( image_src.rows * image_src.cols - lower);
-        myfile << " val " << i << "\t = " << cdf[i] << endl;
+        //myfile << " val " << i << "\t = " << cdf[i] << endl;
         //cout << "val " << i << " : " <<  eq_histogram[i] << endl;
     }
 
@@ -113,8 +114,9 @@ int main(int argc, char** argv )
             //cout << (int) image_dest.at<uchar>(i,j) << endl;
         }
     }
-
     cout << endl;
+
+    imwrite("image_eq.jpg", image_dest);
 /*
     for( int i =  0; i < image_src.rows; i++){
         for( int j = 0; j < image_src.cols; j++){
@@ -123,23 +125,45 @@ int main(int argc, char** argv )
         }
     }
 */
-    myfile.close();
-
+    
+    //Smooth Filter 
     Mat img_padded = imread("image_grayscale.jpg", 0);
+    //Mat img_padded = imread("image_eq.jpg", 0);
 
-    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
-
-    //int w_red =
+    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;    
 
     resize( img_padded, img_padded, Size(), (double)(image_width + 2) /image_width , (double)(image_height + 2)/image_height , INTER_LINEAR );
+/*
+    //constant epsilon 
+    const double eps = 2.2204e-16;
+    cout << eps << endl;
+*/
+    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
 
+    //Aplying filter
+    for( int i = 1; i < (img_padded.rows - 1); i++ ){
+        for( int j = 1; j < (img_padded.cols - 1); j++ ){
+  
+            //cout << (int)img_padded.at<uchar>(i,j) << "\t";
+            img_padded.at<uchar>(i,j)   = (img_padded.at<uchar>(i-1,j-1) * 1/9 ) + (img_padded.at<uchar>(i-1,j) * 1/9 ) + 
+                                          (img_padded.at<uchar>(i-1,j+1) * 1/9 ) + (img_padded.at<uchar>(i,j-1) * 1/9 ) +
+                                          (img_padded.at<uchar>(i  ,j  ) * 1/9 ) + (img_padded.at<uchar>(i,j+1) * 1/9 ) +
+                                          (img_padded.at<uchar>(i+1,j-1) * 1/9 ) + (img_padded.at<uchar>(i+1,j) * 1/9 ) +
+                                          (img_padded.at<uchar>(i+1,j+1) * 1/9 ); 
+
+            //cout << (int)img_padded.at<uchar>(i,j) << "\n";
+        } 
+    }
+/*  //Writing Img Padded to file
+    myfile << "Img Padded" << endl;
     for( int i = 0; i < img_padded.rows; i++){
         for( int j = 0; j < img_padded.cols; j++){
-            img_padded.at<uchar>(i,j) = 0;
+            myfile  <<(int) img_padded.at<uchar>(i,j) << setw(4);
         }
+        cout << endl;
     }
-
-    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
+*/
+    myfile.close();
 
     //Display
     namedWindow("Source ", CV_WINDOW_AUTOSIZE );
@@ -161,6 +185,3 @@ int main(int argc, char** argv )
 
     return 0;
 }
-
-
-
