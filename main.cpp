@@ -10,26 +10,17 @@
 using namespace cv;
 using namespace std;
 
+//limit value of histogram
+int histSize = 256;
+
 int get_median( vector<int> vint){
+    
     sort( vint.begin(), vint.end() );
 
     return ( vint.size() % 2 == 0) ? vint[ (vint.size() + 1) / 2 - 1] :  ( vint[ ( vint.size() ) / 2 - 1] + vint[ ( vint.size() + 1) / 2 - 1] ) / 2 ; 
- }
+}
 
-int main(int argc, char** argv )
-{
-    int histSize = 256;
-
-    ofstream myfile;
-    myfile.open ("values.txt");
-
-    //Initializing mat
-    Mat image_src, histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) ), eq_histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) );
-
-    //reading image
-    image_src = imread( argv[1], 0); // 0, grayscale  >0, color
-
-    imwrite("image_grayscale.jpg", image_src);
+void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram){    
 
     //dimensions of image
     int image_width = image_src.cols;
@@ -37,18 +28,6 @@ int main(int argc, char** argv )
 
     cout << image_src.rows << "\t" << image_src.cols << endl;
     //cout << image_height   << "\t" << image_width    << endl;
-
-    //mat of destiny
-    //Mat image_dest( image_height, image_width, CV_8UC1, Scalar( 0,0,0 ) );
-    Mat image_dest = imread("image_grayscale.jpg", 0);
-
-    cout << image_dest.rows << "\t" << image_dest.cols << endl;
-    cout << "# pixels " << image_width * image_height << endl;
-
-    //vector for histogram and eq_histogram
-    vector<int> histogram(256) ;
-    vector<int> eq_histogram(256);
-    vector<int> cdf(256);
 
     //creation of histogram
     for( int i = 0 ; i < image_src.rows; i++){
@@ -79,6 +58,14 @@ int main(int argc, char** argv )
 
     cout << endl;
 
+}
+
+void get_eqhistogram( Mat image_src, Mat &image_dest, Mat &eq_histogram_graph, vector<int> histogram, vector<int> &eq_histogram){
+
+    //cdf vector
+    vector<int> cdf(256);
+
+    //Initializing position 0
     eq_histogram[0] = histogram[0];
 
     int lower = 1000000;
@@ -113,34 +100,19 @@ int main(int argc, char** argv )
         line( eq_histogram_graph, Point( i, 0 ), Point( i, double(eq_histogram[i] ) ) , Scalar(0,255,0), 2, 8, 0 );
     }
 
-    //Updating eq image
-    for( int i =  0; i < image_height; i++){
-        for( int j = 0; j < image_width; j++){
-            //cout << (int) image_dest.at<uchar>(i,j) <<"//" <<  eq_histogram[ (int) image_dest.at<uchar>(i,j) ] << "\t";
-            image_dest.at<uchar>(i,j) = (uchar) eq_histogram[ (int) image_dest.at<uchar>(i,j) ];
-            //cout << (int) image_dest.at<uchar>(i,j) << endl;
-        }
-    }
-    cout << endl;
+}
 
-    imwrite("image_eq.jpg", image_dest);
-/*
-    for( int i =  0; i < image_src.rows; i++){
-        for( int j = 0; j < image_src.cols; j++){
- //           cout << (int) image_dest.at<uchar>(i,j) <<"//" <<  eq_histogram[ (int) image_dest.at<uchar>(i,j) ] << "\t";
-            image_dest.at<uchar>(i,j) = (uchar) eq_histogram[ (int) image_dest.at<uchar>(i,j) ];
-        }
-    }
-*/
-    
-    //Smooth Filter 
-    Mat img_padded = imread("image_grayscale.jpg", 0);
-    //Mat img_padded = imread("image_eq.jpg", 0);
+void smooth_filter( Mat image_src, Mat &img_padded ){
+
+    int image_width = image_src.cols;
+    int image_height = image_src.rows;
 
     cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;    
 
+    //resizing image
     resize( img_padded, img_padded, Size(), (double)(image_width + 2) /image_width , (double)(image_height + 2)/image_height , INTER_LINEAR );
-/*
+
+/*  //To use gauss function
     //constant epsilon 
     const double eps = 2.2204e-16;
     cout << eps << endl;
@@ -158,37 +130,29 @@ int main(int argc, char** argv )
                                           (img_padded.at<uchar>(i+1,j-1) * 1/9 ) + (img_padded.at<uchar>(i+1,j) * 1/9 ) +
                                           (img_padded.at<uchar>(i+1,j+1) * 1/9 ); 
 
+/*          Using mask of second derivative
+            img_padded.at<uchar>(i,j)   = (img_padded.at<uchar>(i-1,j-1) * 0 ) + (img_padded.at<uchar>(i-1,j) * 1 ) + 
+                                          (img_padded.at<uchar>(i-1,j+1) * 0 ) + (img_padded.at<uchar>(i,j-1) * 1 ) +
+                                          (img_padded.at<uchar>(i  ,j  ) * -4 ) + (img_padded.at<uchar>(i,j+1) * 1 ) +
+                                          (img_padded.at<uchar>(i+1,j-1) * 0 ) + (img_padded.at<uchar>(i+1,j) * 1 ) +
+                                          (img_padded.at<uchar>(i+1,j+1) * 0 ); 
+*/
             //cout << (int)img_padded.at<uchar>(i,j) << "\n";
         } 
     }
+}
+
+void threshold( Mat &img_threshold, int thresh_value){
     
-    namedWindow("Padded ", CV_WINDOW_AUTOSIZE );
-    imshow("Padded ", img_padded );
-
-
-    imwrite("image_padded.jpg", img_padded);
-
-
-    Mat img_threshold = imread("image_padded.jpg", 0);
-    //Applying threshold
-    int thresh = 150;
-    for( int i = 0; i < img_padded.rows; i++){
-        for( int j = 0; j < img_padded.cols; j++){
-            img_threshold.at<uchar>(i,j) = ( (int) img_threshold.at<uchar>(i,j) < thresh ) ? 0 : 255;
+    for( int i = 0; i < img_threshold.rows; i++){
+        for( int j = 0; j < img_threshold.cols; j++){
+            img_threshold.at<uchar>(i,j) = ( (int) img_threshold.at<uchar>(i,j) < thresh_value ) ? 0 : 255;
         }
     }
+}
 
-    namedWindow("Threshold ", CV_WINDOW_AUTOSIZE );
-    imshow("Threshold ", img_threshold );
+void median(Mat &img_median){
 
-    imwrite("image_threshold.jpg", img_threshold);
-
-
-    Mat img_median = imread("image_padded.jpg", 0);
-
-
-    //Median Filter
-    //Mat img_median = imread("image_grayscale.jpg", 0);
     int i = 0 ;
     vector<int> neighborhood(9);
     for( int i = 1; i < (img_median.rows - 1); i++ ){
@@ -203,27 +167,84 @@ int main(int argc, char** argv )
              neighborhood[ 7 ] = img_median.at<uchar>(i+1,j  ) ;
              neighborhood[ 8 ] = img_median.at<uchar>(i+1,j+1) ; 
 
-             img_median.at<uchar>(i,j) = get_median(neighborhood);
-             //cout << i++ << endl;
-
+             img_median.at<uchar>(i,j) = get_median(neighborhood);            
         }
-    }
+    }    
+}
 
-    namedWindow("Median ", CV_WINDOW_AUTOSIZE );
-    imshow("Median ", img_median );
+int main(int argc, char** argv )
+{
+
+    ofstream myfile;
+    myfile.open ("values.txt");
+
+    //Initializing mat
+    Mat image_src;
+    Mat eq_histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) );
+    Mat histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) );
+
+    //reading image
+    image_src = imread( argv[1], 0); // 0, grayscale  >0, color
+
+    //writing grayscale image
+    imwrite("image_grayscale.jpg", image_src);
+
+    //vector for histogram and eq_histogram
+    vector<int> histogram(256) ;
+    vector<int> eq_histogram(256);
+
+    //Getting and drawing histogram
+    get_histogram( image_src, histogram_graph, histogram);
+
     
-    cout << "End" << endl;
+    //mat of destiny
+    Mat image_dest = imread("image_grayscale.jpg", 0);
 
-
-/*  //Writing Img Padded to file
-    myfile << "Img Padded" << endl;
-    for( int i = 0; i < img_padded.rows; i++){
-        for( int j = 0; j < img_padded.cols; j++){
-            myfile  <<(int) img_padded.at<uchar>(i,j) << setw(4);
+    get_eqhistogram( image_src, image_dest, eq_histogram_graph, histogram, eq_histogram );
+   
+    //Updating eq image
+    for( int i =  0; i < image_src.rows; i++){
+        for( int j = 0; j < image_src.cols; j++){
+            //cout << (int) image_dest.at<uchar>(i,j) <<"//" <<  eq_histogram[ (int) image_dest.at<uchar>(i,j) ] << "\t";
+            image_dest.at<uchar>(i,j) = (uchar) eq_histogram[ (int) image_dest.at<uchar>(i,j) ];
+            //cout << (int) image_dest.at<uchar>(i,j) << endl;
         }
-        cout << endl;
     }
-*/
+    cout << endl;
+
+    //Writing eq image
+    imwrite("image_eq.jpg", image_dest);
+    
+
+    //Smooth Filter 
+    Mat img_padded = imread("image_grayscale.jpg", 0);
+    //Mat img_padded = imread("image_eq.jpg", 0);
+
+    smooth_filter( image_src, img_padded);
+
+    //Writing smoothed image
+    imwrite("image_padded.jpg", img_padded);    
+
+
+    //Applying threshold
+    Mat img_threshold = imread("image_padded.jpg", 0);
+    //Mat img_threshold = imread("image_grayscale.jpg", 0);
+ 
+    // thresh value
+    int thresh_value = 150;
+
+    threshold( img_threshold, thresh_value);
+
+    //Writing threshold image
+    imwrite("image_threshold.jpg", img_threshold);
+
+
+    //Median Filter
+    Mat img_median = imread("image_padded.jpg", 0);
+    //Mat img_median = imread("image_grayscale.jpg", 0);
+
+    median(img_median);
+
     myfile.close();
 
     //Display
@@ -238,6 +259,15 @@ int main(int argc, char** argv )
 
     namedWindow("Destiny ", CV_WINDOW_AUTOSIZE );
     imshow("Destiny ", image_dest );  
+
+    namedWindow("Padded ", CV_WINDOW_AUTOSIZE );
+    imshow("Padded ", img_padded );
+
+    namedWindow("Threshold ", CV_WINDOW_AUTOSIZE );
+    imshow("Threshold ", img_threshold );
+
+    namedWindow("Median ", CV_WINDOW_AUTOSIZE );
+    imshow("Median ", img_median );
 
     waitKey(0);
 
