@@ -13,20 +13,54 @@ using namespace std;
 
 //limit value of histogram
 int histSize = 256;
+ofstream my_file("fourier.data"); 
+
 
 #define PI 3.141593
-#define xydim T
-
 #define FOR( i, n) for(int i = 0; i < n; i++)
 
-// T es un valor fijo definido por el usuario.
-// Puede también pasarse a la función.
+typedef vector< vector<double> > matrix;
 
-void my_fourier( Mat& source, Mat& real, Mat& imag) { 
+void print( matrix& x, int space){
+    my_file << "Fourier data" << endl;
 
-    cout << "My fourier" << endl;
+    double limit_min = 0.00005;
+
+    for(unsigned int row = 0; row < x.size(); row++){
+        for(unsigned int col = 0; col < x[0].size(); col++){
+                x[row][col] = ( abs(x[row][col]) < limit_min ) ? 0 : x[row][col];
+                cout << setw(space) << x[row][col] << " ";
+
+                my_file << setw(space) << x[row][col] << " " ;
+
+        }
+        my_file << endl;
+        cout << endl;
+    }
+    cout << endl;
+    //my_file.close();
+}
+
+void check_values( double& val, double limit_min, int type){
+    //double limit_min = 0.00001;
+    if( type == 1 ) { val = ( abs(val) < limit_min ) ? 0 : val;}
+    else if( type == 2 ) { val = ( abs(val) > limit_min ) ? 255 : val; }
+}
+
+void matrixtoMat( matrix& source, Mat& destiny){
+    
+    for( int x = 0; x < destiny.rows; x++){
+	   for( int y = 0; y < destiny.cols; y++){
+	       destiny.at<uchar>(x,y) = (int) source[x][y];
+	   }
+    }                  
+}
+
+void my_fourier( Mat& source, matrix& real, matrix& imag) { 
+
+    cout << "My fourier" << endl;    
     int mn = source.rows * source.cols;
-    double theta = 0, sum1 = 0, sum2 = 0;
+    double theta = 0, sum1 = 0, sum2 = 0, limit_min = 0.00001;
 
     int u,v,x,y;
 
@@ -37,77 +71,90 @@ void my_fourier( Mat& source, Mat& real, Mat& imag) {
 
             FOR( x, source.rows){
                 FOR( y, source.cols){
-                    theta = 2 * PI * ( u * x / source.rows + v * y / source.cols);
-		    //cout << theta << "\t";
-
-                    sum1 = sum1 + source.at<uchar>(x,y) * cos(theta)/(mn);
-                    sum2 = sum2 - source.at<uchar>(x,y) * sin(theta)/mn;
-
+                    //theta = 2 * PI * ( ((u * x) / source.rows) + ((v * y) / source.cols));
+	           	    theta = 2 * PI * ( u * x * source.cols + v * y * source.rows) / mn;
+		            
+                    sum1 = sum1 + (double)source.at<uchar>(x,y) * cos(theta);
+                    sum2 = sum2 - (double)source.at<uchar>(x,y) * sin(theta);
                 }
             }
-//	    cout << sum1 << "\t";
-            real.at<uchar>(u,v) = sum1;
-            imag.at<uchar>(u,v) = sum2;
+		    //cout << "F "<< u << "," << v << "\t" << "sum" << "\t" << sum1 << "\t" << sum2 << endl;
+            check_values( sum1 , limit_min, 1);
+            check_values( sum2 , limit_min, 1);
+            real[u][v] = sum1;
+            imag[u][v] = sum2;
         }
-    }
+	}
+
+    print( real, 10);
+    print( imag, 10);	
 }
 
-void my_fourier_inv( Mat& source, Mat& real, Mat& imag) { 
+void get_module_fimage( Mat& destiny, matrix& real, matrix& imag){
+    my_file << "Module F_Components \n";
 
-    int mn = source.rows * source.cols;
+    int i, j; double module = 0.0;
 
-    cout << "My fourier" << endl;
-    double theta = 0, sum1 = 0, sum2 = 0;
+    FOR( i, real.size()){
+        FOR( j, real[0].size()){
+            module = sqrt( real[i][j] * real[i][j] + imag[i][j] * imag[i][j]);
+            check_values( module, 0.0, 0 ) ;
+            check_values( module, 255.0, 1 ) ;
+
+            my_file << module << setw(7) ;
+
+            destiny.at<uchar>(i,j) = int( module );
+        }
+        my_file << endl;
+    }
+    my_file.close();
+}
+
+void my_fourier_inv( matrix& real, matrix& imag, Mat& destiny) { 
+	
+    cout << "My fourierI" << endl;
+
+    int mn = destiny.rows * destiny.cols;
+    
+    double theta = 0, sum1 = 0, sum2 = 0, limit_min = 0.00001;
 
     int u,v,x,y;
 
-    FOR( u, source.rows){
-        FOR( v, source.cols){
+    FOR( u, destiny.rows){
+	    FOR( v, destiny.cols){
             
             sum1 = 0, sum2 = 0;
 
-            FOR( x, source.rows){
-                FOR( y, source.cols){
-                    theta = 2 * PI * ( u * x / source.rows + v * y / source.cols);
+            FOR( x, destiny.rows){
+                FOR( y, destiny.cols){
+                    //theta = 2 * PI * ( u * x / destiny.rows + v * y / destiny.cols);
+                    theta = 2 * PI * ( u * x * destiny.cols + v * y * destiny.rows) / mn;
 
-                    sum1 = sum1 + real.at<uchar>(x,y) * cos(theta);
-                    sum2 = sum2 + imag.at<uchar>(x,y) * sin(theta);
-
+                    sum1 = sum1 + real[x][y] * cos(theta);
+                    sum2 = sum2 + imag[x][y] * sin(theta);
                 }
             }
-            source.at<uchar>(u,v) = sum1/mn;
-            imag.at<uchar>(u,v) = sum2/mn;
+            check_values( sum1 , limit_min, 1);
+            check_values( sum2 , limit_min, 1);
+
+            real[u][v] = (double)(sum1);
+            imag[u][v] = (double)(sum2);
+
+            destiny.at<uchar>(u,v) = (int)real[u][v] ;
+	        //destiny.at<uchar>(u,v) = sum2;
         }
     }
 
-
-  
-}
-
-/*
-int fourier_uv( int u, int v, Mat& source, int option){
-    int res = 0; double theta;
-    for (int i = 0; i < source.rows; i++){
-        for (int j = 0; j < source.cols; j++){
-            theta = 2 * PI * ( (i * u) / source.rows + ( j * v) / source.cols ) ;
-            if ( option == 1 ) res = res + source.at<uchar> (i,j) * cos(theta);
-            else if ( option == 2 ) res = res + source.at<uchar> (i,j) * sin(theta);
+    FOR( x, real.size()){
+        FOR( y, real[0].size()){
+            real[x][y] = real[x][y] / mn;
+            imag[x][y] = imag[x][y] / mn;
         }
     }
-    //cout << res << "\t";
-    return res;
-}
 
-void my_fourier( Mat& source, Mat& real, Mat& imag) { 
-    for (int i = 0; i < source.rows; i++){
-        for (int j = 0; j < source.cols; j++){
-            real.at<uchar>(i,j) = fourier_uv( i, j, source,1);
-            imag.at<uchar>(i,j) = fourier_uv( i, j, source,2);
-            cout << (int)real.at<uchar>(i,j) << "\t" << (int)imag.at<uchar>(i,j) << endl;
-        }
-    }
+    //print( real, 10);
+    //print( imag, 10);    
 }
-*/
 
 void get_max( Mat& source, int& max){
     max = 0;
@@ -118,6 +165,7 @@ void get_max( Mat& source, int& max){
     }
 }
 
+/*
 void test_fourier( string name ){
 
     Mat I = imread(name, CV_LOAD_IMAGE_GRAYSCALE);
@@ -174,6 +222,7 @@ void test_fourier( string name ){
 
     imshow("spectrum magnitude", magI);
 }
+*/
 
 int get_median( vector<int> vint){
     
@@ -334,10 +383,66 @@ void median(Mat &img_median){
     }    
 }
 
-int main(int argc, char** argv )
-{
+void get_average( vector<int> neighborhood, double& val){
+    for( int i = 0 ; i < neighborhood.size(); i++){
+        val = val + neighborhood[i];
+    }
+    val = val / neighborhood.size();
+}
 
-    cout << cos(2*PI) << endl;
+void get_superpixels( Mat& source, Mat& destiny, double tolerance, int dim){
+    
+    vector<int> neighborhood( dim * dim ); double val = 0.0; int start = ( dim - 1) / 2;
+
+  
+/*
+    for( i = 1; i < (source.rows - 1); i = i + 1 ){
+        for( j = 1; j < (source.cols - 1); j = j + 1 ){
+
+            neighborhood[ 0 ] = source.at<uchar>(i-1,j-1) ;
+            neighborhood[ 1 ] = source.at<uchar>(i-1,j  ) ;
+            neighborhood[ 2 ] = source.at<uchar>(i-1,j+1) ;
+            neighborhood[ 3 ] = source.at<uchar>(i,j-1  ) ;
+            neighborhood[ 4 ] = source.at<uchar>(i  ,j  ) ;
+            neighborhood[ 5 ] = source.at<uchar>(i,j+1  ) ;
+            neighborhood[ 6 ] = source.at<uchar>(i+1,j-1) ;
+            neighborhood[ 7 ] = source.at<uchar>(i+1,j  ) ;
+            neighborhood[ 8 ] = source.at<uchar>(i+1,j+1) ;             
+
+            get_average( neighborhood, val);
+
+            if( abs( val - neighborhood[4] ) / neighborhood[4]  < tolerance ){
+            destiny.at<uchar>(i-1,j-1) = destiny.at<uchar>(i-1,j  ) = destiny.at<uchar>(i-1,j+1)
+            = destiny.at<uchar>(i,j-1  ) = destiny.at<uchar>(i  ,j  ) = destiny.at<uchar>(i,j+1  )
+            = destiny.at<uchar>(i+1,j-1)  = destiny.at<uchar>(i+1,j  ) = destiny.at<uchar>(i+1,j+1)
+            = (int)val;
+            }        
+        }                            
+    }*/
+
+    for( int i = start; i < (source.rows - start); i++ ){
+        for( int j = start; j < (source.cols - start); j++ ){
+
+            int p = 0;
+            
+            for( int k = i - start; k < ( i + dim); k++){
+                for( int l = j - start; l < ( j + dim); l++){
+                    neighborhood[p] = (int)destiny.at<uchar>(k,l);
+                    p++;
+                }
+            }
+            get_average( neighborhood, val);
+
+            for( int k = i - start; k < ( i + dim); k++){
+                for( int l = j - start; l < ( j + dim); l++){
+                    //destiny.at<uchar>(k,l) = int(val);
+                }
+            }
+        }
+    }
+}
+
+int main(int argc, char** argv ){
 
     ofstream myfile;
     myfile.open ("values.txt");
@@ -411,29 +516,65 @@ int main(int argc, char** argv )
 
     myfile.close();
 
-
-//    cout << "FOURIER" << endl;
+/*
+    cout << "FOURIER" << endl;
     
-//    test_fourier(  argv[1] )   ;
+    //test_fourier(  argv[1] )   ;
 
-    Mat f_real = imread(argv[1], 0);
-    Mat f_imag = imread(argv[1], 0);
-    Mat f_total = imread(argv[1], 0) ;
+    Mat f_source = imread(argv[1], 0);
     Mat f_reverted = imread(argv[1], 0) ;
 
-    my_fourier( image_src, f_real, f_imag );
+    matrix C_r( f_source.rows, vector<double>(f_source.cols));
+    matrix C_i( f_source.rows, vector<double>(f_source.cols));
 
-    imwrite("f_real.jpg", f_real);
-    imwrite("f_imag.jpg", f_imag);
-/*
-    cout << f_real << endl;
-    cout << f_imag << endl;
-*/
 
-    my_fourier_inv( f_reverted, f_real, f_imag );
+    time_t timer = time(0); 
+    my_fourier( f_source, C_r, C_i );
+    time_t timer2 = time(0);
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+
+    get_module_fimage( f_reverted, C_r, C_i);
+    imwrite("f_module_image.jpg", f_reverted);
+    
+    matrixtoMat( C_r, f_source);
+    imwrite("f_real.jpg", f_source);
+
+    matrixtoMat( C_i, f_source);
+    imwrite("f_imag.jpg", f_source);
+
+    timer = time(0); 
+    my_fourier_inv( C_r, C_i, f_reverted );
+    timer2 = time(0);
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+
+    cout << (int)image_src.at<uchar>(10,10) << "\t" << (int)image_src.at<uchar>(15,15) << "\t" << (int)image_src.at<uchar>(50,100) << endl;
+
+    cout << (int)C_r[10][10] << "\t" << (int)C_r[15][15] << "\t" << C_r[50][100] << endl;
+
+    cout << (int)f_reverted.at<uchar>(10,10) << "\t" << (int)f_reverted.at<uchar>(15,15) << "\t" << (int)f_reverted.at<uchar>(50,100) << endl;
+    
+
 
     imwrite("f_reverted.jpg", f_reverted);
-    imwrite("f_reverted_imag.jpg", f_imag);
+
+    matrixtoMat( C_r, f_source);
+    imwrite("fi_real.jpg", f_source);
+
+    matrixtoMat( C_i, f_source);
+    imwrite("fi_imag.jpg", f_source);
+*/
+    Mat image_superpixel = imread( argv[1], 0);
+
+
+
+    get_superpixels( image_src, image_superpixel, 1, 5);
+    imwrite("superpixel_5x5.jpg", image_superpixel);
+
+
+    
+
+
+    //imwrite("f_reverted_imag.jpg", f_imag);
 
 /*
     int my_thresh = 11;
@@ -474,22 +615,7 @@ int main(int argc, char** argv )
     }
     */
 
-
-/*
-    Mat C = (Mat_<double>(3,3) << 1, 2, 3, 3, 4, 5, 5, 6, 7);
-    Mat C_i = (Mat_<double>(3,3) << 1, 2, 3, 3, 4, 5, 5, 6, 7);
-    Mat C_r = (Mat_<double>(3,3) << 1, 2, 3, 3, 4, 5, 5, 6, 7);
-    
-
-    cout <"sss";
-    my_fourier( C, C_r, C_i);
-
-    cout << C << endl ;
-    cout << C_r << endl ;
-    cout << C_i << endl ;
-*/
-
-    namedWindow("My FourierR ", CV_WINDOW_AUTOSIZE );
+ /*   namedWindow("My FourierR ", CV_WINDOW_AUTOSIZE );
     imshow("My FourierR ", f_real);
 
     namedWindow("My FourierI ", CV_WINDOW_AUTOSIZE );
@@ -500,12 +626,7 @@ int main(int argc, char** argv )
 
     namedWindow("My Fourier ", CV_WINDOW_AUTOSIZE );
     imshow("My Fourier ", f_reverted );
-
-
-
-
-
-
+*/
 
 /*
     //Display
