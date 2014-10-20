@@ -390,7 +390,7 @@ void get_average( vector<int> neighborhood, double& val){
     val = val / neighborhood.size();
 }
 
-void get_superpixels( Mat& source, Mat& destiny, double tolerance, int dim){
+void get_superpixels( Mat& source, Mat& destiny, int dim){
     
     vector<int> neighborhood( dim * dim ); double val = 0.0; int start = ( dim - 1) / 2;
 
@@ -420,22 +420,29 @@ void get_superpixels( Mat& source, Mat& destiny, double tolerance, int dim){
         }                            
     }*/
 
-    for( int i = start; i < (source.rows - start); i++ ){
-        for( int j = start; j < (source.cols - start); j++ ){
+    cout << neighborhood.size() << endl;
+
+    for( int i = start; i < (source.rows - start); i=i+dim ){
+        for( int j = start; j < (source.cols - start ); j=j+dim ){
 
             int p = 0;
             
-            for( int k = i - start; k < ( i + dim); k++){
-                for( int l = j - start; l < ( j + dim); l++){
+            for( int k = i - start ; k < ( i + dim -1 ); k++){
+                for( int l = j - start ; l < ( j + dim  -1); l++){
                     neighborhood[p] = (int)destiny.at<uchar>(k,l);
                     p++;
+                    //cout << p << endl;
                 }
             }
             get_average( neighborhood, val);
 
-            for( int k = i - start; k < ( i + dim); k++){
-                for( int l = j - start; l < ( j + dim); l++){
-                    //destiny.at<uchar>(k,l) = int(val);
+//            cout << i << "\t" << j << endl;
+
+            for( int k = i - start ; k < ( i + dim -1); k++){
+                for( int l = j - start ; l < ( j + dim -1); l++){
+                    destiny.at<uchar>(k,l) = int(val);
+
+  //                  cout << k << "\t" << l << endl;
                 }
             }
         }
@@ -567,7 +574,7 @@ int main(int argc, char** argv ){
 
 
 
-    get_superpixels( image_src, image_superpixel, 1, 5);
+    get_superpixels( image_src, image_superpixel, 3);
     imwrite("superpixel_5x5.jpg", image_superpixel);
 
 
