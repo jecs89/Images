@@ -17,10 +17,11 @@ ofstream my_file("fourier.data");
 
 
 #define PI 3.141593
-#define FOR( i, n) for(int i = 0; i < n; i++)
+#define FOR( i, n ) for(int i = 0; i < n; i++)
 
 typedef vector< vector<double> > matrix;
 
+//print double matrix
 void print( matrix& x, int space){
     my_file << "Fourier data" << endl;
 
@@ -41,12 +42,14 @@ void print( matrix& x, int space){
     //my_file.close();
 }
 
+//check values and update using a thresh
 void check_values( double& val, double limit_min, int type){
     //double limit_min = 0.00001;
     if( type == 1 ) { val = ( abs(val) < limit_min ) ? 0 : val;}
     else if( type == 2 ) { val = ( abs(val) > limit_min ) ? 255 : val; }
 }
 
+//copy values of double matrix to Mat
 void matrixtoMat( matrix& source, Mat& destiny){
     
     for( int x = 0; x < destiny.rows; x++){
@@ -56,6 +59,73 @@ void matrixtoMat( matrix& source, Mat& destiny){
     }                  
 }
 
+//copy values of Mat to int matrix
+void Mattovector( Mat& source, vector<int>& destiny){
+    
+    for( int x = 0; x < source.rows; x++){
+       for( int y = 0; y < source.cols; y++){
+           destiny[ x + y ] = int (source.at<uchar>(x,y) );
+       }
+    }                  
+}
+
+//copy values of int vector to Mat
+void vectortoMat( vector<int>& source, Mat& destiny ){
+ for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           destiny.at<uchar>(x,y) = source[ x + y ];
+       }
+    }                     
+}
+
+//copy values of int vector to Mat
+void vectortoMat( vector<double>& source, Mat& destiny ){
+ for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           destiny.at<uchar>(x,y) = int( source[ x + y ] );
+       }
+    }                     
+}
+
+
+void my_fourier_1d( vector<int>& source, vector<double>& real, vector<double>& imag){
+    double theta = 0, sum1 = 0, sum2 = 0;
+
+    int u,x, tam = source.size();
+
+    FOR( u, tam ){
+        sum1 = sum2 = 0;
+        
+        FOR( x, tam ){
+            theta = 2 * PI * ( u * x ) / tam ;
+            sum1 = sum1 + source[x] * cos(theta);
+            sum2 = sum2 - source[x] * sin(theta);
+        }   
+        real[u] = sum1;
+        imag[u] = sum2;
+    }
+}
+
+void my_fourier_inv1d( vector<int>& source, vector<double>& real, vector<double>& imag){
+    double theta = 0, sum1 = 0, sum2 = 0;
+
+    int u,x, tam = source.size();
+
+    FOR( u, tam ){
+        sum1 = sum2 = 0;
+        
+        FOR( x, tam ){
+            theta = 2 * PI * ( u * x ) / tam ;
+            sum1 = sum1 + source[x] * cos(theta);
+            sum2 = sum2 + source[x] * sin(theta);
+        }   
+        real[u] = sum1/tam;
+        imag[u] = sum2/tam;
+    }
+}
+
+
+//fourier function
 void my_fourier( Mat& source, matrix& real, matrix& imag) { 
 
     cout << "My fourier" << endl;    
@@ -79,17 +149,18 @@ void my_fourier( Mat& source, matrix& real, matrix& imag) {
                 }
             }
 		    //cout << "F "<< u << "," << v << "\t" << "sum" << "\t" << sum1 << "\t" << sum2 << endl;
-            check_values( sum1 , limit_min, 1);
-            check_values( sum2 , limit_min, 1);
+            //check_values( sum1 , limit_min, 1);
+            //check_values( sum2 , limit_min, 1);
             real[u][v] = sum1;
             imag[u][v] = sum2;
         }
 	}
 
-    print( real, 10);
-    print( imag, 10);	
+    //print( real, 10);
+    //print( imag, 10);	
 }
 
+//get module of fourier transformation
 void get_module_fimage( Mat& destiny, matrix& real, matrix& imag){
     my_file << "Module F_Components \n";
 
@@ -110,6 +181,7 @@ void get_module_fimage( Mat& destiny, matrix& real, matrix& imag){
     my_file.close();
 }
 
+//inverse fourier function
 void my_fourier_inv( matrix& real, matrix& imag, Mat& destiny) { 
 	
     cout << "My fourierI" << endl;
@@ -134,11 +206,11 @@ void my_fourier_inv( matrix& real, matrix& imag, Mat& destiny) {
                     sum2 = sum2 + imag[x][y] * sin(theta);
                 }
             }
-            check_values( sum1 , limit_min, 1);
-            check_values( sum2 , limit_min, 1);
+            //check_values( sum1 , limit_min, 1);
+            //check_values( sum2 , limit_min, 1);
 
-            real[u][v] = (double)(sum1);
-            imag[u][v] = (double)(sum2);
+            real[u][v] = (double)(sum1/mn);
+            imag[u][v] = (double)(sum2/mn);
 
             destiny.at<uchar>(u,v) = (int)real[u][v] ;
 	        //destiny.at<uchar>(u,v) = sum2;
@@ -422,24 +494,29 @@ void get_superpixels( Mat& source, Mat& destiny, int dim){
 
     cout << neighborhood.size() << endl;
 
+
     for( int i = start; i < (source.rows - start); i=i+dim ){
         for( int j = start; j < (source.cols - start ); j=j+dim ){
 
             int p = 0;
             
-            for( int k = i - start ; k < ( i ); k++){
-                for( int l = j - start ; l < ( j ); l++){
+            for( int k = i - start ; k <= ( i + start  ); k++){
+                for( int l = j - start ; l <= ( j + start ); l++){
                     neighborhood[p] = (int)destiny.at<uchar>(k,l);
                     p++;
-                    cout << p << endl;
+                    //cout << p << endl;
+                    //cout << "(" << k << "," << l << ")" << "\t";
                 }
+                
             }
+            //cout << " //// " << endl;
+
             get_average( neighborhood, val);
 
 //            cout << i << "\t" << j << endl;
 
-            for( int k = i - start ; k < ( i ); k++){
-                for( int l = j - start ; l < ( j ); l++){
+            for( int k = i - start ; k <= ( i + start ); k++){
+                for( int l = j - start ; l <= ( j + start ); l++){
                     destiny.at<uchar>(k,l) = int(val);
 
   //                  cout << k << "\t" << l << endl;
@@ -523,7 +600,7 @@ int main(int argc, char** argv ){
 
     myfile.close();
 
-/*
+
     cout << "FOURIER" << endl;
     
     //test_fourier(  argv[1] )   ;
@@ -534,34 +611,48 @@ int main(int argc, char** argv ){
     matrix C_r( f_source.rows, vector<double>(f_source.cols));
     matrix C_i( f_source.rows, vector<double>(f_source.cols));
 
+    vector<int>  v_source( f_source.rows * f_source.cols);
+    vector<double>  v_real( f_source.rows * f_source.cols);
+    vector<double>  v_imag( f_source.rows * f_source.cols);
+
+    Mattovector( f_source, v_source );
 
     time_t timer = time(0); 
-    my_fourier( f_source, C_r, C_i );
+
+    my_fourier_1d( v_source, v_real, v_imag );
+
     time_t timer2 = time(0);
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 
-    get_module_fimage( f_reverted, C_r, C_i);
-    imwrite("f_module_image.jpg", f_reverted);
+    timer = time(0); 
+    my_fourier( f_source, C_r, C_i );
+    timer2 = time(0);
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+
+    //get_module_fimage( f_reverted, C_r, C_i);
+    //imwrite("f_module_image.jpg", f_reverted);
     
-    matrixtoMat( C_r, f_source);
+    /*matrixtoMat( C_r, f_source);
     imwrite("f_real.jpg", f_source);
 
     matrixtoMat( C_i, f_source);
     imwrite("f_imag.jpg", f_source);
+*/
+    /*timer = time(0); 
+   //my_fourier_inv( C_r, C_i, f_reverted );
 
-    timer = time(0); 
-    my_fourier_inv( C_r, C_i, f_reverted );
+    my_fourier_inv1d( v_source, v_real, v_imag  );
+
+
     timer2 = time(0);
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 
-    cout << (int)image_src.at<uchar>(10,10) << "\t" << (int)image_src.at<uchar>(15,15) << "\t" << (int)image_src.at<uchar>(50,100) << endl;
+    /*cout << (int)image_src.at<uchar>(10,10) << "\t" << (int)image_src.at<uchar>(15,15) << "\t" << (int)image_src.at<uchar>(50,100) << endl;
 
     cout << (int)C_r[10][10] << "\t" << (int)C_r[15][15] << "\t" << C_r[50][100] << endl;
 
     cout << (int)f_reverted.at<uchar>(10,10) << "\t" << (int)f_reverted.at<uchar>(15,15) << "\t" << (int)f_reverted.at<uchar>(50,100) << endl;
     
-
-
     imwrite("f_reverted.jpg", f_reverted);
 
     matrixtoMat( C_r, f_source);
@@ -569,16 +660,29 @@ int main(int argc, char** argv ){
 
     matrixtoMat( C_i, f_source);
     imwrite("fi_imag.jpg", f_source);
-*/
-    Mat image_superpixel = imread( argv[1], 0);
 
+/*    Mat image_superpixel = imread( argv[1], 0);
 
-
-    get_superpixels( image_src, image_superpixel, 9);
+    get_superpixels( image_src, image_superpixel, 3);
     imwrite("superpixel_5x5.jpg", image_superpixel);
 
+    for( int i = 0 ; i < 10; i++){
+        image_superpixel = imread( "superpixel_5x5.jpg", 0);
+        get_superpixels( image_superpixel, image_superpixel, 3);
+        imwrite("superpixel_5x5.jpg", image_superpixel);
 
-    
+    }
+
+    Mat image_sum = imread( argv[1], 0);
+
+    for( int i = 0; i < image_sum.rows; i++){
+        for( int j = 0; j < image_sum.cols; j++){
+        image_sum.at<uchar>(i,j) = int(image_sum.at<uchar>(i,j)) - int( image_superpixel.at<uchar>(i,j) );
+        }
+    }
+
+    imwrite("image_sum.jpg", image_sum);
+*/
 
 
     //imwrite("f_reverted_imag.jpg", f_imag);
