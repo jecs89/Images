@@ -427,19 +427,19 @@ void get_superpixels( Mat& source, Mat& destiny, int dim){
 
             int p = 0;
             
-            for( int k = i - start ; k < ( i + dim -1 ); k++){
-                for( int l = j - start ; l < ( j + dim  -1); l++){
+            for( int k = i - start ; k < ( i ); k++){
+                for( int l = j - start ; l < ( j ); l++){
                     neighborhood[p] = (int)destiny.at<uchar>(k,l);
                     p++;
-                    //cout << p << endl;
+                    cout << p << endl;
                 }
             }
             get_average( neighborhood, val);
 
 //            cout << i << "\t" << j << endl;
 
-            for( int k = i - start ; k < ( i + dim -1); k++){
-                for( int l = j - start ; l < ( j + dim -1); l++){
+            for( int k = i - start ; k < ( i ); k++){
+                for( int l = j - start ; l < ( j ); l++){
                     destiny.at<uchar>(k,l) = int(val);
 
   //                  cout << k << "\t" << l << endl;
@@ -574,7 +574,7 @@ int main(int argc, char** argv ){
 
 
 
-    get_superpixels( image_src, image_superpixel, 3);
+    get_superpixels( image_src, image_superpixel, 9);
     imwrite("superpixel_5x5.jpg", image_superpixel);
 
 
