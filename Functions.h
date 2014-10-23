@@ -680,7 +680,7 @@ void morph_dilation( m_int& source, m_int& struct_elem ){
                 for( int k = 0; k < struct_elem.size(); k++){
                     for( int l = 0 ; l < struct_elem[0].size(); l++){
                         if( struct_elem[k][l] != 0 ){
-                            copy_source[ k + i - 1 ] [ l + j - 1] = struct_elem[ k ][ l ];
+                            copy_source[ k + i - 1 ] [ l + j - 1] = struct_elem[ k ][ l ]*255;
                         }
                     }
                 }
@@ -731,4 +731,42 @@ void vectomatrix( vector<int>& source, m_int& destiny){
         }
         cout << endl;
     }*/
+}
+
+void test_morph_dilation(){
+    
+    int spc = 5;
+
+
+    vector<int> v_test = { 0 , 0 , 0 , 0 , 0 , 0 , 0,
+                           0 , 0 , 1 , 0 , 1 , 0 , 0,
+                           0 , 0 , 0 , 0 , 0 , 0 , 0,
+                           0 , 0 , 0 , 0 , 0 , 0 , 0,
+                           0 , 0 , 1 , 0 , 1 , 0 , 0,
+                           0 , 0 , 0 , 0 , 0 , 0 , 0,
+                           0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    for( int i = 0 ; i < v_test.size(); i++){
+        cout << v_test[i] << " ";
+        if( (i+1) % (int)sqrt( v_test.size() ) == 0){
+            cout << endl;
+        }
+    }
+
+    m_int test;
+
+    vectomatrix( v_test, test );
+    print( test, spc );
+
+    vector<int> v_struct_elem = { 0, 1, 0,
+                                1, 1, 1,
+                                0, 1, 0};
+
+    m_int struct_elem;
+
+    vectomatrix( v_struct_elem, struct_elem);
+
+    morph_dilation( test, struct_elem );
+
+    print( test, spc );
 }

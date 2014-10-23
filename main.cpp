@@ -123,57 +123,31 @@ int main(int argc, char** argv ){
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 */
 
-    int spc = 5;
     Mat f_morph = imread( "Example_morph.png", 0);
 
-    threshold( f_morph, 100);
+    threshold( f_morph, 150);
 
     imwrite( "image_thresh.jpg", f_morph );
 
     m_int m_morph( f_morph.rows, vector<int>(f_morph.cols) );
 
-    vector<int> v_test = { 0 , 0 , 0 , 0 , 0 , 0 , 0,
-                           0 , 0 , 1 , 0 , 1 , 0 , 0,
-                           0 , 0 , 0 , 0 , 0 , 0 , 0,
-                           0 , 0 , 0 , 0 , 0 , 0 , 0,
-                           0 , 0 , 1 , 0 , 1 , 0 , 0,
-                           0 , 0 , 0 , 0 , 0 , 0 , 0,
-                           0 , 0 , 0 , 0 , 0 , 0 , 0 };
-
-    for( int i = 0 ; i < v_test.size(); i++){
-        cout << v_test[i] << " ";
-        if( (i+1) % (int)sqrt( v_test.size() ) == 0){
-            cout << endl;
-        }
-    }
-
-    m_int test;
-
-    vectomatrix( v_test, test );
-    print( test, spc );
-
     vector<int> v_struct_elem = { 0, 1, 0,
-                                1, 1, 1,
-                                0, 1, 0};
+                                 1, 1, 1,
+                                 0, 1, 0};
 
     m_int struct_elem;
 
-    vectomatrix( v_struct_elem, struct_elem);
-
-    morph_dilation( test, struct_elem );
+    vectomatrix( v_struct_elem, struct_elem );
 
     
-
-    print( test, spc );
-
-    /*Mattomatrix( f_morph, m_morph );
+    Mattomatrix( f_morph, m_morph );
 
     morph_dilation( m_morph, struct_elem );
 
     matrixtoMat( m_morph, f_morph );
 
     imwrite( "image_morph_dilation.jpg", f_morph );
-    */
+    
 
 
 
