@@ -36,6 +36,27 @@ void print( matrix& x, int space){
     //my_file.close();
 }
 
+void print( m_int& x, int space){
+    my_file << "Fourier data" << endl;
+
+    double limit_min = 0.00005;
+
+    for(unsigned int row = 0; row < x.size(); row++){
+        for(unsigned int col = 0; col < x[0].size(); col++){
+                //x[row][col] = ( abs(x[row][col]) < limit_min ) ? 0 : x[row][col];
+                cout << setw(space) << x[row][col] << " ";
+
+                //my_file << setw(space) << x[row][col] << " " ;
+
+        }
+        //my_file << endl;
+        cout << endl;
+    }
+    cout << endl;
+    //my_file.close();
+}
+
+
 //check values and update using a thresh
 void check_values( double& val, double limit_min, int type){
     //double limit_min = 0.00001;
@@ -53,7 +74,27 @@ void matrixtoMat( matrix& source, Mat& destiny){
     }                  
 }
 
-//copy values of Mat to int matrix
+//copy values of double matrix to Mat
+void matrixtoMat( m_int& source, Mat& destiny){
+    
+    for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           destiny.at<uchar>(x,y) = (int) source[x][y];
+       }
+    }                  
+}
+
+//copy values of int matrix to Mat
+void Mattomatrix( Mat& source, m_int& destiny){
+    
+    for( int x = 0; x < source.rows; x++){
+       for( int y = 0; y < source.cols; y++){
+           destiny[x][y] = (int) source.at<uchar>(x,y);
+       }
+    }                  
+}
+
+//copy values of Mat to int vector
 void Mattovector( Mat& source, vector<int>& destiny){
     
     for( int x = 0; x < source.rows; x++){
@@ -615,4 +656,79 @@ void filter_butterworth( Mat& f_source, Mat& filter, Mat& destiny){
        }
     }  
 
+}
+
+void morph_dilation( m_int& source, m_int& struct_elem ){
+
+    int dim =  (struct_elem.size() % 2 == 0 ) ? struct_elem.size()/2 : (struct_elem.size() - 1 ) /2;
+
+    m_int copy_source( source.size(), vector<int>(source[0].size()) );
+
+    for( int i = 0 ; i < source.size(); i++){
+        for( int j = 0; j < source[0].size(); j++){
+
+            copy_source[i][j] = source[i][j];
+
+        }
+    }
+
+    for( int i = 1 ; i < source.size() - 1; i++){
+        for( int j = 1; j < source[0].size() - 1; j++){
+            
+            if( source[i][j] != 0){
+
+                for( int k = 0; k < struct_elem.size(); k++){
+                    for( int l = 0 ; l < struct_elem[0].size(); l++){
+                        if( struct_elem[k][l] != 0 ){
+                            copy_source[ k + i - 1 ] [ l + j - 1] = struct_elem[ k ][ l ];
+                        }
+                    }
+                }
+            }                
+        }
+    }
+
+    for( int i = 0 ; i < source.size(); i++){
+        for( int j = 0; j < source[0].size(); j++){
+
+            source[i][j] = copy_source[i][j];
+
+        }
+    }
+
+}
+
+void vectomatrix( vector<int>& source, m_int& destiny){
+    int size = sqrt( source.size() );
+
+    vector<int> source_inv;
+    
+    for( int i = 0; i < source.size() ; i++){
+
+        source_inv.push_back( source[ source.size() - i - 1]  );
+
+    }
+
+    //destiny.resize( size, vector<int>(size));
+
+    vector<int> row(size);
+
+    for( int i = 0; i < size; i++){
+        row.clear();
+        for( int j = 0; j < size; j++){
+            row.push_back( source_inv.back() );
+            source_inv.pop_back();
+        }
+        destiny.push_back( row );
+    }
+
+
+    /*for( int i = 0; i < size; ++i){
+        for( int j = 0; j < size; ++j){
+            destiny[i][j] = source[i*j+1];
+
+            cout << "(" << i <<"," << j << ")" << " " << source[ i + j] << "\t";
+        }
+        cout << endl;
+    }*/
 }
