@@ -3,8 +3,7 @@
 
 int main(int argc, char** argv ){
 
-    //ofstream myfile;
-    //myfile.open ("values.txt");
+    ofstream my_file("values.txt");
 
     //Initializing mat
     Mat image_src;
@@ -23,7 +22,6 @@ int main(int argc, char** argv ){
 
     //Getting and drawing histogram
     get_histogram( image_src, histogram_graph, histogram);
-
     
     //mat of destiny
     Mat image_dest = imread("image_grayscale.jpg", 0);
@@ -43,7 +41,6 @@ int main(int argc, char** argv ){
     //Writing eq image
     imwrite("image_eq.jpg", image_dest);
     
-
     //Smooth Filter 
     Mat img_padded = imread("image_grayscale.jpg", 0);
     //Mat img_padded = imread("image_eq.jpg", 0);
@@ -60,12 +57,11 @@ int main(int argc, char** argv ){
  
     // thresh value
     int thresh_value = 150;
-
+ 
     threshold( img_threshold, thresh_value);
 
     //Writing threshold image
     imwrite("image_threshold.jpg", img_threshold);
-
 
     //Median Filter
     Mat img_median = imread("image_padded.jpg", 0);
@@ -73,7 +69,7 @@ int main(int argc, char** argv ){
 
     median(img_median);
 
-    //myfile.close();
+    //my_file.close();
 
 
     cout << "FOURIER" << endl;
@@ -82,8 +78,9 @@ int main(int argc, char** argv ){
 
     Mat f_source = imread(argv[1], 0);
     Mat f_reverted = imread(argv[1], 0) ;
+    Mat f_butterworth = imread("filter_butterworth.png", 0) ;
 
-    matrix C_r( f_source.rows, vector<double>(f_source.cols));
+/*    matrix C_r( f_source.rows, vector<double>(f_source.cols));
     matrix C_i( f_source.rows, vector<double>(f_source.cols));
 
     vector<int>  v_source( f_source.rows * f_source.cols);
@@ -91,16 +88,38 @@ int main(int argc, char** argv ){
     vector<double>  v_imag( f_source.rows * f_source.cols);
 
     Mattovector( f_source, v_source );
-
+*/
     time_t timer = time(0); 
 
-    my_fourier_1d( v_source, v_real, v_imag );
+    //my_fourier_1d( v_source, v_real, v_imag );
+
+    vector<my_Complex> v_complex;
+    MattoComplex( f_source, v_complex );
+
+    fft1d( v_complex );
+
+    ComplextoMat( v_complex, f_source);
+
+    imwrite( "imag_fourier.jpg", f_source);
 
     time_t timer2 = time(0);
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 
+
+    filter_butterworth( f_source, f_butterworth, f_source);
+
+    MattoComplex( f_source, v_complex );
+
+
     timer = time(0); 
-    my_fourier( f_source, C_r, C_i );
+    //my_fourier( f_source, C_r, C_i );
+
+    ffti1d( v_complex );
+
+    ComplextoMat( v_complex, f_reverted);    
+
+    imwrite( "imag_reverted.jpg", f_reverted);
+
     timer2 = time(0);
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 

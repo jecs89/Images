@@ -2,23 +2,18 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include <vector>
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
 #include <math.h>
 
+#include "myTypes.h"
+#include "myConstants.h"
+
 using namespace cv;
 using namespace std;
 
-
-//limit value of histogram
-int histSize = 256;
-
-#define PI 3.141593
-#define FOR( i, n ) for(int i = 0; i < n; i++)
-
-typedef vector< vector<double> > matrix;
+ofstream my_file("fourier.data"); 
 
 //print double matrix
 void print( matrix& x, int space){
@@ -523,4 +518,101 @@ void get_superpixels( Mat& source, Mat& destiny, int dim){
             }
         }
     }
+}
+
+void get_values( vector<my_Complex>& source, vector<my_Complex>& destiny, int start, int size, int incr){
+    
+    int index , counter = 0;
+
+    for( counter, index = start; counter < size; counter++, index = index + incr ){
+
+        destiny[counter] = ( my_Complex( source[index].real, source[index].imag ) );
+    }
+}
+
+void fill_vector( vector<my_Complex>& source, int size){
+    for( int i = 0 ; i < size; ++i){
+        source.push_back( my_Complex(0,0) );
+    }
+}
+
+void fft1d( vector<my_Complex>& source ){
+    
+    int N = source.size();
+
+    if ( N <= 1 ) return;
+
+    vector<my_Complex> even;
+    vector<my_Complex> odd; 
+
+    fill_vector( even, N/2);
+    fill_vector( odd, N/2);
+
+    get_values( source, even, 0, N/2, 2 );
+    get_values( source, odd, 1, N/2, 2 );
+
+    fft1d( even );
+    fft1d( odd );
+
+    for( int i = 0 ; i < N/2 ; ++i){
+        
+        double theta = 2 * PI * i / N;
+        
+        my_Complex th( cos(theta), sin(theta) );
+
+        my_Complex t( th.real*odd[i].real - th.imag * odd[i].imag , th.real *odd[i].imag + th.imag*odd[i].real);
+
+        source[i]       = my_Complex( even[i].real + t.real, even[i].imag + t.imag ) ;
+
+        source[i + N/2] = my_Complex( even[i].real - t.real, even[i].imag - t.imag ) ;
+        
+    }
+}
+
+void ffti1d( vector<my_Complex>& source ){
+
+    for( int i = 0 ; i < source.size() ; ++i){
+        source[i].imag = -source[i].imag;
+    }
+
+    fft1d( source );
+
+    for( int i = 0 ; i < source.size() ; ++i){
+        source[i].imag = -source[i].imag;
+    }
+
+    for( int i = 0 ; i < source.size() ; ++i){
+        source[i] = my_Complex( source[i].real / source.size() , source[i].imag / source.size() );
+    }   
+}
+
+void MattoComplex(Mat& source, vector<my_Complex>& destiny){
+
+    for( int x = 0; x < source.rows; x++){
+       for( int y = 0; y < source.cols; y++){
+           destiny.push_back( my_Complex( int(source.at<uchar>(x,y)), 0 ) );
+       }
+    }                     
+
+}
+
+void ComplextoMat( vector<my_Complex>& source, Mat& destiny){
+
+    for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           //destiny.at<uchar>(x,y) = log( source[x+y].real*source[x+y].real + source[x+y].imag*source[x+y].imag) ;
+            destiny.at<uchar>(x,y) = source[x+y].real;
+       }
+    }                     
+}
+
+void filter_butterworth( Mat& f_source, Mat& filter, Mat& destiny){
+ 
+    for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           
+            destiny.at<uchar>(x,y) = f_source.at<uchar>(x,y) - filter.at<uchar>(x,y);
+       }
+    }  
+
 }
