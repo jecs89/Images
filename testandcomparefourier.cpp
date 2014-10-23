@@ -2,11 +2,14 @@
 #include <iostream>
 #include <valarray>
 #include <vector>
+#include <iomanip>
  
 const double PI = 3.141592653589793238460;
  
 typedef std::complex<double> Complex;
 typedef std::valarray<Complex> CArray;
+
+#define space 20
 
 using namespace std;
  
@@ -155,23 +158,14 @@ int main()
     cout << c1.real()*c2.real() - c1.imag() * c2.imag() << "\t" << c1.real() * c2.imag() + c1.imag()*c2.real();
 	*/
 
-    cout << " ///////// " << endl;
+    
 
     size_t N = data.size();
     CArray even = data[slice(0, N/2, 2)];
     CArray  odd = data[slice(1, N/2, 2)];
 
-    for (int i = 0; i < 8; ++i){
-        cout << even[i] << std::endl;
-    }
 
-    cout << " ///////// " << endl;
-
-    for (int i = 0; i < 8; ++i){
-        cout << odd[i] << std::endl;
-    }
-
-	vector<my_Complex> m_even;
+    vector<my_Complex> m_even;
 	vector<my_Complex> m_odd;	
 
 	get_values( v_complex, m_even, 0, N/2, 2 );
@@ -179,21 +173,19 @@ int main()
 
 	cout << " ///////// " << endl;
 
-    for (int i = 0; i < 8; ++i){
+    for (int i = 0; i < 4; ++i){
+        cout << setw( space ) << even[i] << "\t";
         cout << m_even[i].real <<" " << m_even[i].imag << endl;
     }
 
     cout << " ///////// " << endl;
 
-    for (int i = 0; i < 8; ++i){
+    for (int i = 0; i < 4; ++i){
+        cout  << setw( space ) << odd[i] << "\t";
         cout << m_odd[i].real <<" " << m_odd[i].imag << endl;
-    
-	}
+    }
 
-
-
-
-
+	cout << "My first Make \n";
 
     return 0;
 }
