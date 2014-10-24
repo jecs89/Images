@@ -159,7 +159,6 @@ void my_fourier_inv1d( vector<int>& source, vector<double>& real, vector<double>
     }
 }
 
-
 //fourier function
 void my_fourier( Mat& source, matrix& real, matrix& imag) { 
 
@@ -698,6 +697,50 @@ void morph_dilation( m_int& source, m_int& struct_elem ){
 
 }
 
+void morph_erosion( m_int& source, m_int& struct_elem ){
+
+    int dim =  (struct_elem.size() % 2 == 0 ) ? struct_elem.size()/2 : (struct_elem.size() - 1 ) /2;
+
+    m_int copy_source( source.size(), vector<int>(source[0].size()) );
+
+    for( int i = 0 ; i < source.size(); i++){
+        for( int j = 0; j < source[0].size(); j++){
+
+            copy_source[i][j] = 0;
+
+        }
+    }
+
+    for( int i = 1 ; i < source.size() - 1; i++){
+        for( int j = 1; j < source[0].size() - 1; j++){
+            
+            if( source[i][j] != 0){
+                int cont = 0;
+
+                for( int k = 0; k < struct_elem.size(); k++){
+                    for( int l = 0 ; l < struct_elem[0].size(); l++){
+                        if( struct_elem[k][l] == source[i + k - 1][ j + l - 1 ]/255 && struct_elem[k][l] == 1 ){
+                            //copy_source[ i + k - 1 ] [ j + l - 1 ] = 255;
+                            cont ++;
+                        }
+                    }
+                }
+                if ( cont ==  5 ) { copy_source[i][j] = 255; }
+            }                
+        }
+    }
+
+    for( int i = 0 ; i < source.size(); i++){
+        for( int j = 0; j < source[0].size(); j++){
+
+            source[i][j] = copy_source[i][j];
+
+        }
+    }
+
+}
+
+
 void vectomatrix( vector<int>& source, m_int& destiny){
     int size = sqrt( source.size() );
 
@@ -721,16 +764,6 @@ void vectomatrix( vector<int>& source, m_int& destiny){
         }
         destiny.push_back( row );
     }
-
-
-    /*for( int i = 0; i < size; ++i){
-        for( int j = 0; j < size; ++j){
-            destiny[i][j] = source[i*j+1];
-
-            cout << "(" << i <<"," << j << ")" << " " << source[ i + j] << "\t";
-        }
-        cout << endl;
-    }*/
 }
 
 void test_morph_dilation(){
@@ -759,8 +792,8 @@ void test_morph_dilation(){
     print( test, spc );
 
     vector<int> v_struct_elem = { 0, 1, 0,
-                                1, 1, 1,
-                                0, 1, 0};
+                                  1, 1, 1,
+                                  0, 1, 0};
 
     m_int struct_elem;
 
@@ -769,4 +802,49 @@ void test_morph_dilation(){
     morph_dilation( test, struct_elem );
 
     print( test, spc );
+}
+
+void test_morph_erosion(){
+    
+    int spc = 5;
+
+
+    vector<int> v_test = { 0 , 0 , 1 , 0 , 0 , 0 , 0,
+                           0 , 1 , 1 , 1 , 1 , 0 , 0,
+                           0 , 0 , 1 , 0 , 0 , 0 , 0,
+                           0 , 0 , 0 , 1 , 1 , 0 , 0,
+                           0 , 0 , 1 , 1 , 1 , 1 , 0,
+                           0 , 0 , 0 , 1 , 1 , 0 , 0,
+                           0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    for( int i = 0 ; i < v_test.size(); i++){
+        cout << v_test[i] << " ";
+        if( (i+1) % (int)sqrt( v_test.size() ) == 0){
+            cout << endl;
+        }
+    }
+
+    m_int test;
+
+    vectomatrix( v_test, test );
+    print( test, spc );
+
+    vector<int> v_struct_elem = { 0, 1, 0,
+                                1, 1, 1,
+                                0, 1, 0};
+
+    m_int struct_elem;
+
+    vectomatrix( v_struct_elem, struct_elem);
+
+    morph_erosion( test, struct_elem );
+
+    print( test, spc );
+}
+
+void compress( Mat& source ){
+
+    
+
+
 }

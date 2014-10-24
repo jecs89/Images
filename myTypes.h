@@ -4,6 +4,7 @@
 using namespace cv;
 
 typedef vector< vector<double> > matrix;
+typedef vector< vector<int> > m_int;
 
 struct my_Complex{
 	double real;

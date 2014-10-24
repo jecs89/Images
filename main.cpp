@@ -124,8 +124,10 @@ int main(int argc, char** argv ){
 */
 
     Mat f_morph = imread( "Example_morph.png", 0);
+    Mat f_morph2 = imread( "Example_morph.png", 0);
 
     threshold( f_morph, 150);
+    threshold( f_morph2, 150);
 
     imwrite( "image_thresh.jpg", f_morph );
 
@@ -148,11 +150,24 @@ int main(int argc, char** argv ){
 
     imwrite( "image_morph_dilation.jpg", f_morph );
     
+    Mattomatrix( f_morph2, m_morph );
 
+    morph_erosion( m_morph, struct_elem );
 
+    matrixtoMat( m_morph, f_morph );
 
+    imwrite( "image_morph_erosion.jpg", f_morph );
 
+    for( int i = 0 ; i < f_morph.rows; i++){
+        for( int j = 0 ; j < f_morph.cols; j++){
+            f_morph.at<uchar>(i,j) = abs ( (int)f_morph.at<uchar>(i,j) - (int)f_morph2.at<uchar>(i,j) );
+        }
+    }
 
+    imwrite( "image_contours.jpg", f_morph );    
+
+    //test_morph_erosion();
+    
     //get_module_fimage( f_reverted, C_r, C_i);
     //imwrite("f_module_image.jpg", f_reverted);
     
