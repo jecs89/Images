@@ -3,7 +3,23 @@
 
 int main(int argc, char** argv ){
 
-    ofstream my_file("values.txt");
+    Mat image_dest = imread(argv[1], 0);
+    Mat img_threshold = imread(argv[1], 0);
+    Mat borders = imread(argv[1], 0);
+
+    for( int i = 0 ; i < borders.rows ; ++i){
+        for( int j = 0; j < borders.cols; ++j){
+            borders.at<uchar>(i,j) = 0;
+        }
+    }
+
+    threshold( img_threshold, 150);
+
+    get_bordersthreshold( img_threshold, borders );
+
+    imwrite( "borders.jpg", borders );
+
+/*    ofstream my_file("values.txt");
 
     //Initializing mat
     Mat image_src;
@@ -123,7 +139,7 @@ int main(int argc, char** argv ){
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 */
 
-    Mat f_morph = imread( "Example_morph.png", 0);
+/*    Mat f_morph = imread( "Example_morph.png", 0);
     Mat f_morph2 = imread( "Example_morph.png", 0);
 
     threshold( f_morph, 150);

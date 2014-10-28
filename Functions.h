@@ -848,3 +848,14 @@ void compress( Mat& source ){
 
 
 }
+
+void get_bordersthreshold( Mat& image_src, Mat& borders){
+
+    for( int x = 0; x < image_src.rows - 1 ; x++){
+        for( int y = 0; y < image_src.cols - 1; y++){
+            if( image_src.at<uchar>(x,y) != image_src.at<uchar>(x+1,y+1) ){
+                borders.at<uchar>(x,y) = image_src.at<uchar>(x,y); 
+            }
+        }
+    }
+}
