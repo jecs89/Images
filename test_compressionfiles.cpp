@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <bitset>
+#include <stdio.h>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -20,7 +21,6 @@ typedef vector< vector<int> > m_int;
 
 struct my_pair{
 	int value, index;
-	//my_pair(int v, int i){ value = v; index = i;}
 };
 
 bool compareByvalue(const my_pair &a, const my_pair &b){
@@ -63,7 +63,6 @@ void get_histogram( Mat image_src, vector<int> &histogram){
         }
     }
 }
-
 
 void init_m_int( m_int& table_values, int value){
 	for( int i = 0 ; i < table_values.size() ; ++i ){
@@ -118,34 +117,7 @@ void dectobin( int number, int& conv ) {
 
 	//cout << conv << endl;
 }
-/*
-void dectobin( int number, int& conv, bitset v_bit ) {
 
-	int limit = 12;
-
-	int s[limit],i,b = number;
-
-	string s_num ="", s_tmp="";
-
-	for(i=0; i<=(limit-1) ; i++){
-		s[i]=b%2;
-		b=b/2;
-	}
-	
-
-	for(i=0; i<=(limit-1); i++){
-		
-		s_tmp = static_cast<ostringstream*>( &(ostringstream() << s[ (limit-1)-i ]) )->str();		
-
-		s_num = s_num + s_tmp;
-	} 
-
-	if ( ! (istringstream(s_num) >> conv) ) conv = 0;
-
-
-	//cout << conv << endl;
-}
-*/
 void bintodec( int number, int&conv){
 	int tmp = number, count = 0, acum = 0;	
 	
@@ -206,7 +178,7 @@ int main(int argc, char** argv ){
 	ofstream my_file("values.txt");
 
 	//count to change values for more frequent from 1  to limit
-	int count = 1; int conv = 0;
+	int count = 0; int conv = 0;
 
 	Mat tmp = imread( argv[1], 0); // 0, grayscale  >0, color
 
@@ -219,7 +191,7 @@ int main(int argc, char** argv ){
 				if( image_src.at<uchar>(i,j) == v_pair[k].index ){
 					//dectobin( (int) image_src.at<uchar>(i,j), num );
 					//my_file << count << "." ;
-					tmp.at<uchar>(i,j) = ( count < 256 ) ? count : tmp.at<uchar>(i,j);
+					tmp.at<uchar>(i,j) = ( count < 256 &&  (int)tmp.at<uchar>(i,j) != 0 ) ? count : tmp.at<uchar>(i,j);
 				}
 				else{
 					//my_file << (int) image_src.at<uchar>(i,j) << "." ;
@@ -231,76 +203,39 @@ int main(int argc, char** argv ){
 	}
 
 	for( int i = 0 ; i < image_src.rows ; ++i ){
-		for( int j = 0 ; j < image_src.cols ; ++j ){
-
-				bitset<8> b_num;
-				//cout << (int)tmp.at<uchar>(i,j) << "\t";
-				int pix = (int)tmp.at<uchar>(i,j);
-
-				//cout << pix << "\t";
-
-				dectobin( pix , conv );
-
-				//cout << conv << endl;
-				
-				string s_num = static_cast<ostringstream*>( &(ostringstream() << conv) )->str();
-				
-				string s_prefix ="";
-
-				if( s_num.size() < 9 ) {
-					for( int i = 0; i < ( 8 - s_num.size()); ++i ){
-						s_prefix = s_prefix + "0";
-					}
-				}
-
-				s_num = s_prefix + s_num;
-
-				//cout << s_num << endl;
-
-				for( int k = 0 ; k < s_num.size(); ++k){
-
-					b_num[k] = ( s_num[k] == 0) ? b_num[k] : b_num[k].set();
-				}
- 
-			    //string mystring =
-    			//b_num.to_string<char,string::traits_type,string::allocator_type>();
-
-				for( int k = 0 ; k < b_num.size(); ++k){
-					my_file << b_num[k];
-				}
-				//my_file << s_num ;
+		for( int j = 0 ; j < image_src.cols ; ++j ){										 			   				
 				//my_file << (int)tmp.at<uchar>(i,j) << " "; 
-		}
-		//my_file << endl;
+				my_file << tmp.at<uchar>(i,j) ; 
+		}		
 	}
 
 	my_file.close();
 
+
+	//Reading file
 	ifstream reader("values.txt") ;
 
 	string line1, line2, line3, line4 ;		
 	int num1, num2, num3;
 
+	//histogram table
 	vector<my_pair> new_table;
 
-	//while( getline( reader, line1 ) ){
+	//Reading header of file
 	getline( reader, line1 );
 	size_t pos = line1.find("$$");
 
 	line2 = line1.substr( 0, pos );
 		
+	//Getting histogram table		
 	while( line2.size() != 0){
 		
-		pos = line2.find(".");	num3 = pos;
-		//cout << pos << endl;
-		line3 = line2.substr( 0 , pos );
-		//cout << line2 << endl;			
+		pos = line2.find(".");	num3 = pos;		
+		line3 = line2.substr( 0 , pos );	
 
 		pos = line3.find(",");
 		line4 = line3.substr( pos+1 );
 		line3 = line3.substr( 0, pos );
-
-		//cout << line2 << "\t" << line3 << endl;
 
 		if ( ! (istringstream(line3) >> num1) ) num1 = 0;
 		if ( ! (istringstream(line4) >> num2) ) num2 = 0;
@@ -310,93 +245,29 @@ int main(int argc, char** argv ){
 
 		//cout << mp.index << "\t" << mp.value << endl;
 
-		line2 = line2.substr( num3 + 1 );
-			//cout << line3 << endl;
+		line2 = line2.substr( num3 + 1 );			
 	}
+
+	for( int i = 0 ; i < new_table.size(); ++i)	cout << new_table[i].index << "\t" << new_table[i].value << endl;
 
 	getline( reader, line1 );
 
-	//cout << line1 << endl;		
 	line2 = line1;
-/*
+
 	Mat image_decomp = imread( argv[1], 0); // 0, grayscale  >0, color
 	
-	//while( line2.size() != 0){
-		
-		for( int i = 0 ; i < image_decomp.rows ; ++i){
-			for( int j = 0 ; j < image_decomp.cols ; ++j){
+	for( int i = 0 ; i < image_decomp.rows ; ++i){
+		for( int j = 0 ; j < image_decomp.cols ; ++j){
 
-				if( line2.size() != 0){
-					line3 = line2.substr(0, 8 );
+			wchar_t c = reader.get();
 
-					cout << line3 << "\t";
+			//cout << int(c) ;
 
-					if ( ! (istringstream(line3) >> num1) ) num1 = 0;
-
-					bintodec( num1, conv );
-
-					image_decomp.at<uchar>(i,j) = conv;
-
-					line2 = line2.substr(8);
-				}
-			}
-		}
-	//}
-
-*/
-
-	//Reading file and making table
-/*	ifstream reader("values.txt") ;
-
-	if( !reader.is_open() ){
-		cout << "Problems opening file \n" ;
-	}
-
-	string line1, line2 ;	
-	double x, y, z ;
-
-	int lvl_compression = 4 , number, conv;
-
-	v_int table_values( pow( 2, lvl_compression) ) ;   
-
-	init_v_int( table_values, 0 );
-
-	while( getline( reader, line1 ) ){
-		//cout << line1 << endl;
-		line2 = line1 ;
-		for( int i = 1; i < lvl_compression ; ++i ){		
-			
-			while( line2.size() > 0){
-				
-				line2 = line1.substr( 0, i ) ;
-
-				cout << line2 << "\t";
-
-				if ( ! (istringstream(line2) >> number) ) number = 0;
-
-				cout << number << "\t";
-
-				bintodec( number, conv );
-
-				cout << conv << endl;
-
-				table_values[ conv ] ++;
-
-				//binary( number, conv );
-
-				//string s_num = static_cast<ostringstream*>( &(ostringstream() << conv) )->str();
-
-				//table_values[]
-
-				line2 = line2.substr( i, line2.length() ) ;
-
-				//cout << line2 << endl;
-			}
+			image_decomp.at<uchar>(i,j) = new_table[int(c)].index;
 		}
 	}
-
-	print( table_values );
-*/
 	
+	imwrite( "img_decomp.jpg", image_decomp );
+	 	
 	return 0;
 }
