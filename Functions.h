@@ -1,19 +1,16 @@
-#include <iostream>
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include <fstream>
-#include <iomanip>
-#include <algorithm>
-#include <math.h>
 
-#include "myTypes.h"
-#include "myConstants.h"
+
+#include "ProtFunctions.h"
 
 using namespace cv;
 using namespace std;
 
 ofstream my_file("fourier.data"); 
+
+void displayMat( Mat& img_src, string namewindow ){
+    namedWindow( namewindow, CV_WINDOW_AUTOSIZE );
+    imshow( namewindow, img_src );
+}
 
 //print double matrix
 void print( matrix& x, int space){
@@ -343,7 +340,7 @@ void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram
     int image_width = image_src.cols;
     int image_height = image_src.rows;
 
-    cout << image_src.rows << "\t" << image_src.cols << endl;
+    cout << "Image's dimension: " << image_src.rows << "\t" << image_src.cols << endl;
     //cout << image_height   << "\t" << image_width    << endl;
 
     //creation of histogram
@@ -360,7 +357,7 @@ void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram
         if( higher < (*it) ) higher = (*it);
 //        cout << (*it) << "\t";
     }
-    cout << higher << endl;
+    //cout << "Max frequency: " << higher << endl;
 /*
     for( vector<int>::iterator it = histogram.begin(); it != histogram.end(); it++)
         cout << (*it) << "\t";
@@ -373,7 +370,7 @@ void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram
         line( histogram_graph, Point( i, 0 ), Point( i, double(histogram[i] / 10) ) , Scalar(0,255,0), 2, 8, 0 );
     }
 
-    cout << endl;
+    //cout << endl;
 
 }
 
@@ -400,7 +397,7 @@ void get_eqhistogram( Mat image_src, Mat &image_dest, Mat &eq_histogram_graph, v
         //cout << cdf [i] << endl;
     }
 
-    cout << "lower : " << lower << endl;
+    //cout << "lower : " << lower << endl;
 
     //calculating eq_histogram
     //myfile <<"\nEQ Table\n";
@@ -424,7 +421,7 @@ void smooth_filter( Mat image_src, Mat &img_padded ){
     int image_width = image_src.cols;
     int image_height = image_src.rows;
 
-    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;    
+    //cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;    
 
     //resizing image
     resize( img_padded, img_padded, Size(), (double)(image_width + 2) /image_width , (double)(image_height + 2)/image_height , INTER_LINEAR );
@@ -434,7 +431,7 @@ void smooth_filter( Mat image_src, Mat &img_padded ){
     const double eps = 2.2204e-16;
     cout << eps << endl;
 */
-    cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
+    //cout << "dimensions of padded " << img_padded.rows << "\t" << img_padded.cols << endl;
 
     //Aplying filter
     for( int i = 1; i < (img_padded.rows - 1); i++ ){
@@ -526,7 +523,7 @@ void get_superpixels( Mat& source, Mat& destiny, int dim){
         }                            
     }*/
 
-    cout << neighborhood.size() << endl;
+    //cout << neighborhood.size() << endl;
 
 
     for( int i = start; i < (source.rows - start); i=i+dim ){
@@ -842,13 +839,6 @@ void test_morph_erosion(){
     print( test, spc );
 }
 
-void compress( Mat& source ){
-
-    
-
-
-}
-
 void get_bordersthreshold( Mat& image_src, Mat& borders){
 
     for( int x = 0; x < image_src.rows - 1 ; x++){
@@ -858,4 +848,261 @@ void get_bordersthreshold( Mat& image_src, Mat& borders){
             }
         }
     }
+}
+
+void initMat( Mat& img_src , int val ){
+    for( int i = 0 ; i < img_src.rows ; ++i){
+        for( int j = 0; j < img_src.cols; ++j){
+            img_src.at<uchar>(i,j) = val;
+        }
+    }
+
+}
+
+void function_equalization( string path ){
+
+    cout << "Equalization\n";
+
+    cout << path << endl;
+    
+    //Initializing mat
+    Mat image_src = imread( path, 0); // 0, grayscale  >0, color
+
+    Mat eq_histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) );
+    Mat histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) );
+
+    //reading image
+
+    //writing grayscale image
+    imwrite("image_grayscale.jpg", image_src);
+
+    //vector for histogram and eq_histogram
+    vector<int> histogram(256) ;
+    vector<int> eq_histogram(256);
+
+    //Getting and drawing histogram
+    get_histogram( image_src, histogram_graph, histogram);
+    
+    //mat of destiny
+    Mat image_dest = imread("image_grayscale.jpg", 0);
+
+    get_eqhistogram( image_src, image_dest, eq_histogram_graph, histogram, eq_histogram );
+   
+    //Updating eq image
+    for( int i =  0; i < image_src.rows; i++){
+        for( int j = 0; j < image_src.cols; j++){
+            //cout << (int) image_dest.at<uchar>(i,j) <<"//" <<  eq_histogram[ (int) image_dest.at<uchar>(i,j) ] << "\t";
+            image_dest.at<uchar>(i,j) = (uchar) eq_histogram[ (int) image_dest.at<uchar>(i,j) ];
+            //cout << (int) image_dest.at<uchar>(i,j) << endl;
+        }
+    }
+    //cout << endl;
+
+    //Writing eq image
+    imwrite("image_eq.jpg", image_dest);
+
+    //Display
+    displayMat( image_src, "Source Image" );
+    displayMat( image_dest, "Eq Image" );
+}
+
+void function_sfilters( string path ){
+
+    cout << "Spatial Filters\n";
+
+    Mat image_src = imread( path, 0); // 0, grayscale  >0, color
+
+    //Smooth Filter 
+    Mat img_padded = imread("image_grayscale.jpg", 0);
+    //Mat img_padded = imread("image_eq.jpg", 0);
+
+    smooth_filter( image_src, img_padded);
+
+    //Writing smoothed image
+    imwrite("image_meanfilter.jpg", img_padded);    
+
+
+    //Applying threshold
+    Mat img_threshold = imread("image_padded.jpg", 0);
+    //Mat img_threshold = imread("image_grayscale.jpg", 0);
+ 
+    // thresh value
+    int thresh_value = 150;
+ 
+    threshold( img_threshold, thresh_value);
+
+    //Writing threshold image
+    imwrite("image_threshold.jpg", img_threshold);
+
+    //Median Filter
+    Mat img_median = imread("image_padded.jpg", 0);
+    //Mat img_median = imread("image_grayscale.jpg", 0);
+
+    median(img_median);
+
+    imwrite("image_medianfilter.jpg", img_threshold);
+
+    //Display
+    displayMat( img_padded, "Mean Filter" );
+    displayMat( img_median, "Median Filter" );
+
+}
+
+void function_tfilters( string path ){
+    cout << "FOURIER" << endl;
+    
+    //test_fourier(  argv[1] )   ;
+
+    Mat f_source = imread( path, 0);
+    Mat f_reverted = imread( path, 0);
+    Mat f_butterworth = imread("filter_butterworth.png", 0) ;
+
+    //matrix C_r( f_source.rows, vector<double>(f_source.cols));
+    //matrix C_i( f_source.rows, vector<double>(f_source.cols));
+
+    vector<int>  v_source( f_source.rows * f_source.cols);
+    vector<double>  v_real( f_source.rows * f_source.cols);
+    vector<double>  v_imag( f_source.rows * f_source.cols);
+
+    Mattovector( f_source, v_source );
+
+    time_t timer = time(0); 
+
+    //my_fourier_1d( v_source, v_real, v_imag );
+
+    vector<my_Complex> v_complex;
+    MattoComplex( f_source, v_complex );
+
+    fft1d( v_complex );
+
+    ComplextoMat( v_complex, f_source);
+
+    imwrite( "image_fourier.jpg", f_source);
+
+    time_t timer2 = time(0);
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+
+
+    filter_butterworth( f_source, f_butterworth, f_source);
+
+    MattoComplex( f_source, v_complex );
+
+    timer = time(0); 
+    //my_fourier( f_source, C_r, C_i );
+
+    ffti1d( v_complex );
+
+    ComplextoMat( v_complex, f_reverted);    
+
+    imwrite( "imag_reverted.jpg", f_reverted);
+
+    timer2 = time(0);
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+
+    //Display
+    displayMat( f_source, "FF Transform" );
+    displayMat( f_reverted, "FFI Transform" );    
+}
+
+void function_borders( string path ){
+
+    cout << "Getting borders\n";
+
+    Mat image_dest = imread(path, 0);
+    Mat img_threshold = imread(path, 0);
+    Mat borders = imread(path, 0);
+
+    initMat(borders, 0);
+    
+    threshold( img_threshold, 150);
+
+    get_bordersthreshold( img_threshold, borders );
+
+    imwrite( "image_borders.jpg", borders );
+
+    //Display
+    displayMat( borders, "Thresh Border" );
+}
+
+void function_morphological( string path ){
+
+    cout << "Morpholical Operations\n";
+
+    Mat f_morph = imread( path, 0);
+    Mat f_morph2 = imread( path, 0);
+
+    threshold( f_morph, 150);
+    threshold( f_morph2, 150);
+
+    imwrite( "image_thresh.jpg", f_morph );
+
+    m_int m_morph( f_morph.rows, vector<int>(f_morph.cols) );
+
+    vector<int> v_struct_elem = { 0, 1, 0,
+                                 1, 1, 1,
+                                 0, 1, 0};
+
+    m_int struct_elem;
+
+    vectomatrix( v_struct_elem, struct_elem );
+
+    
+    Mattomatrix( f_morph, m_morph );
+
+    morph_dilation( m_morph, struct_elem );
+
+    matrixtoMat( m_morph, f_morph );
+
+    imwrite( "image_morph_dilation.jpg", f_morph );
+    
+    Mattomatrix( f_morph2, m_morph );
+
+    morph_erosion( m_morph, struct_elem );
+    matrixtoMat( m_morph, f_morph );
+
+    imwrite( "image_morph_erosion.jpg", f_morph );
+
+    for( int i = 0 ; i < f_morph.rows; i++){
+        for( int j = 0 ; j < f_morph.cols; j++){
+            f_morph.at<uchar>(i,j) = abs ( (int)f_morph.at<uchar>(i,j) - (int)f_morph2.at<uchar>(i,j) );
+        }
+    }
+
+    imwrite( "image_contours.jpg", f_morph );    
+
+    //Display
+    displayMat( f_morph, "Dilation Operation" );    
+    displayMat( f_morph, "Erosion Operation" );
+
+}
+
+void function_segmentation( string path ){
+
+    Mat image_src = imread( path, 0); // 0, grayscale  >0, color
+
+
+    Mat image_superpixel = imread( path, 0);
+
+    get_superpixels( image_src, image_superpixel, 3);
+    imwrite("superpixel_5x5.jpg", image_superpixel);
+
+    for( int i = 0 ; i < 10; i++){
+        image_superpixel = imread( "superpixel_5x5.jpg", 0);
+        get_superpixels( image_superpixel, image_superpixel, 3);
+        imwrite("superpixel_5x5.jpg", image_superpixel);
+
+    }
+
+    Mat image_sum = imread( path, 0);
+
+    for( int i = 0; i < image_sum.rows; i++){
+        for( int j = 0; j < image_sum.cols; j++){
+        image_sum.at<uchar>(i,j) = int(image_sum.at<uchar>(i,j)) - int( image_superpixel.at<uchar>(i,j) );
+        }
+    }
+
+    imwrite("image_sum.jpg", image_sum);
+
+    //Display
+    displayMat( image_sum, "Superpixel using a mean grid" );    
 }
