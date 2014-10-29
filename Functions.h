@@ -638,7 +638,8 @@ void ComplextoMat( vector<my_Complex>& source, Mat& destiny){
     for( int x = 0; x < destiny.rows; x++){
        for( int y = 0; y < destiny.cols; y++){
            //destiny.at<uchar>(x,y) = log( source[x+y].real*source[x+y].real + source[x+y].imag*source[x+y].imag) ;
-            destiny.at<uchar>(x,y) = source[x+y].real;
+            destiny.at<uchar>(x,y) = (int)source[x+y].real;
+            //cout << (int)destiny.at<uchar>(x,y) << endl;
        }
     }                     
 }
@@ -913,7 +914,7 @@ void function_sfilters( string path ){
     Mat image_src = imread( path, 0); // 0, grayscale  >0, color
 
     //Smooth Filter 
-    Mat img_padded = imread("image_grayscale.jpg", 0);
+    Mat img_padded = imread(path, 0);
     //Mat img_padded = imread("image_eq.jpg", 0);
 
     smooth_filter( image_src, img_padded);
@@ -923,7 +924,7 @@ void function_sfilters( string path ){
 
 
     //Applying threshold
-    Mat img_threshold = imread("image_padded.jpg", 0);
+    Mat img_threshold = imread("image_meanfilter.jpg", 0);
     //Mat img_threshold = imread("image_grayscale.jpg", 0);
  
     // thresh value
@@ -935,7 +936,7 @@ void function_sfilters( string path ){
     imwrite("image_threshold.jpg", img_threshold);
 
     //Median Filter
-    Mat img_median = imread("image_padded.jpg", 0);
+    Mat img_median = imread("image_meanfilter.jpg", 0);
     //Mat img_median = imread("image_grayscale.jpg", 0);
 
     median(img_median);
@@ -975,7 +976,42 @@ void function_tfilters( string path ){
 
     fft1d( v_complex );
 
+    //vector<int> magnitude;
+
+    for( int i = 0 ; i < v_complex.size() ; ++i){
+        v_complex[i].real =  log2( abs((int)sqrt( powf(v_complex[i].real,2) + powf( v_complex[i].imag,2) )));
+       //cout  << v_complex[i].real << endl;
+    }
+
     ComplextoMat( v_complex, f_source);
+
+    for( int i = 0 ; i < f_source.rows ; ++i ){
+        for( int j = 0 ; j < f_source.cols ; ++j){
+            //cout << (int)f_source.at<uchar>(i,j) << "\t" << v_complex[i+j].real << endl;
+        }
+    }
+
+    int limx = f_source.rows/2, limy = f_source.cols/2;
+    Mat temp = imread( path, 0) ;
+
+    temp = f_source ;
+
+    //cout << temp ;
+
+
+    for( int i = 0 ; i < limx; ++i){
+        for( int j = 0 ; j < limy ; ++j){
+            f_source.at<uchar>(i,j) = temp.at<uchar>( limx + i, limy + j);
+            f_source.at<uchar>( limx + i, limy + j) = temp.at<uchar>(i,j);
+        }
+    }
+
+    for( int i = limx ; i < f_source.rows; ++i){
+        for( int j = 0 ; j < limy ; ++j){
+            f_source.at<uchar>(i,j) = temp.at<uchar>( f_source.rows - i , f_source.rows );
+        }
+    }
+
 
     imwrite( "image_fourier.jpg", f_source);
 
