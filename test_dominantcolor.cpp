@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <math.h>
 #include <vector>
+#include <thread>
 
 
 #define histSize 256
@@ -78,9 +79,28 @@ void print( vector<pair<int,int>>& v_pair ){
 	}
 }
 
-int diff = 30;
+int diff = 10;
 int size = 4;
 int tolerance = 10;
+
+
+void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<int>& vR, vector<int>& vG, vector<int>& vB, int x, int y){
+
+	cout << x << "\t" << y << endl;
+	for( int p = 0 ; p < size ; ++p){
+    	for( int q = 0 ; q < v_points[p].size(); ++q){
+	    	for( int i = 0 ; i < x ; ++i ){
+				for( int j = 0 ; j < y ; ++j){
+					if( i == v_points[p][q].first && j == v_points[p][q].second ){
+						image_src.at<Vec3b>(i,j)[0] = vR[p];
+						image_src.at<Vec3b>(i,j)[1] = vG[p];
+						image_src.at<Vec3b>(i,j)[2] = vB[p];
+					}
+				}
+			}
+		}	
+	}
+}
 
 int main(int argc, char** argv ){
 	
@@ -117,20 +137,20 @@ int main(int argc, char** argv ){
 
     cout << "v_color size: " << v_color.size() << endl;
 
-    vector<vector<pair<int,int>>> v_points;
+    vector<vector<pair<int,int>>> v_points(size);
 
-    for( int p = 0 ; p < size-1 ; p++){
+    for( int p = 0 ; p < size ; p++){
     	cout << "hola" << endl;
     	for( int i = 0 ; i < image_src2.rows ; ++i ){
 			for( int j = 0 ; j < image_src2.cols ; ++j){
-				//if( ( (int)image_src2.at<uchar>(i,j) - v_color[p] ) < tolerance ){
+				if( ( (int)image_src2.at<uchar>(i,j) - v_color[p] ) < tolerance ){
 					v_points[p].push_back( pair<int,int>(i,j) );
-					cout << v_color[p] << endl;
-				//}
+					//cout << v_color[p] << endl;
+				}
 			}
 		}
 	}	
-/*
+
 	vector<int> vR(size);
 	vector<int> vG(size);
 	vector<int> vB(size);
@@ -141,6 +161,31 @@ int main(int argc, char** argv ){
 		vB.push_back( image_src.at<Vec3b>(v_points[i][0].first,v_points[i][0].second)[2]  );
 	}
 
+	int nThreads = thread::hardware_concurrency();
+	vector<thread> ths(nThreads);
+
+	cout << ths.size() << endl;
+
+    time_t timer = time(0); 
+
+
+	for ( int x = 0, y = 0, i = 0 ; x < image_src.rows && y < image_src.cols && i < nThreads; x+=( image_src.rows/nThreads ), y+=(image_src.cols/nThreads), i++ )
+		ths[i] = thread( dominant_color, ref(image_src), ref(v_points), ref(vR), ref(vG), ref(vB), x, y);
+	
+	time_t timer2 = time(0); 
+
+	cout <<"Tiempo total: " << difftime(timer2, timer) << endl;		
+
+	timer = time(0); 
+	for ( int i = 0; i < nThreads; i++ )
+		ths[i].join();
+	timer2 = time(0); 
+	
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;		
+	imwrite( "dominant_color.jpg", image_src);
+
+    timer = time(0); 
+	
     for( int p = 0 ; p < size ; ++p){
     	for( int q = 0 ; q < v_points[p].size(); ++q){
 	    	for( int i = 0 ; i < image_src.rows ; ++i ){
@@ -154,8 +199,9 @@ int main(int argc, char** argv ){
 			}
 		}	
 	}
+	
+	timer2 = time(0); 
+    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;				
 
-	imwrite( "dominant_color.jpg", image_src);
-*/
 	return 0;
 }
