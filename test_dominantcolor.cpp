@@ -79,18 +79,18 @@ void print( vector<pair<int,int>>& v_pair ){
 	}
 }
 
-int diff = 10;
+int diff = 100;
 int size = 4;
-int tolerance = 10;
+int tolerance = 5;
 
 
-void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<int>& vR, vector<int>& vG, vector<int>& vB, int x, int y){
+void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<int>& vR, vector<int>& vG, vector<int>& vB, int x0, int y0, int x1, int y1){
 
-	cout << x << "\t" << y << endl;
+	//cout << x << "\t" << y << endl;
 	for( int p = 0 ; p < size ; ++p){
     	for( int q = 0 ; q < v_points[p].size(); ++q){
-	    	for( int i = 0 ; i < x ; ++i ){
-				for( int j = 0 ; j < y ; ++j){
+	    	for( int i = x0 ; i < x1 ; ++i ){
+				for( int j = y0 ; j < y1 ; ++j){
 					if( i == v_points[p][q].first && j == v_points[p][q].second ){
 						image_src.at<Vec3b>(i,j)[0] = vR[p];
 						image_src.at<Vec3b>(i,j)[1] = vG[p];
@@ -139,8 +139,7 @@ int main(int argc, char** argv ){
 
     vector<vector<pair<int,int>>> v_points(size);
 
-    for( int p = 0 ; p < size ; p++){
-    	cout << "hola" << endl;
+    for( int p = 0 ; p < size ; p++){    	
     	for( int i = 0 ; i < image_src2.rows ; ++i ){
 			for( int j = 0 ; j < image_src2.cols ; ++j){
 				if( ( (int)image_src2.at<uchar>(i,j) - v_color[p] ) < tolerance ){
@@ -166,11 +165,31 @@ int main(int argc, char** argv ){
 
 	cout << ths.size() << endl;
 
+	double incx = double(image_src.rows)/2;
+	double incy = double(image_src.cols)/4;
+
+	cout << incx << "\t" << incy << endl;
+
+	vector< pair< pair<int,int> , pair<int,int> > > v_blocks;
+
+	for ( double x = 0 ; x < image_src.rows - 1 ; x+=incx ){
+		for( double y = 1 ; y < image_src.cols - 1; y+=incy ){
+			cout << int(x) << "\t" << int(y - 1) << "\t--\t" << int(x + double(image_src.rows)/2 )<< "\t" << int( y -1+ double(image_src.cols)/4 )<< endl ;
+
+			v_blocks.push_back( pair<pair<int,int>, pair<int,int>>( 
+								pair<int,int>(int(x),int(y - 1)) , pair<int,int>(int(x + double(image_src.rows)/2 ),int( y -1+ double(image_src.cols)/4 )) )  );
+		}
+	}
+
+	// cout << v_blocks[1].first.first << endl;
+	// cout << v_blocks[1].first.second << endl;
+
+
     time_t timer = time(0); 
 
-
-	for ( int x = 0, y = 0, i = 0 ; x < image_src.rows && y < image_src.cols && i < nThreads; x+=( image_src.rows/nThreads ), y+=(image_src.cols/nThreads), i++ )
-		ths[i] = thread( dominant_color, ref(image_src), ref(v_points), ref(vR), ref(vG), ref(vB), x, y);
+	for ( int x = 0, y = 0, i = 0 ; x < image_src.rows && y < image_src.cols && i < nThreads; x+=( image_src.rows/nThreads ), y+=(image_src.cols/nThreads), i++ ){
+		ths[i] = thread( dominant_color, ref(image_src), ref(v_points), ref(vR), ref(vG), ref(vB), v_blocks[i].first.first, v_blocks[i].first.second, v_blocks[i].second.first, v_blocks[i].second.second);
+	}
 	
 	time_t timer2 = time(0); 
 
@@ -185,7 +204,7 @@ int main(int argc, char** argv ){
 	imwrite( "dominant_color.jpg", image_src);
 
     timer = time(0); 
-	
+	/*
     for( int p = 0 ; p < size ; ++p){
     	for( int q = 0 ; q < v_points[p].size(); ++q){
 	    	for( int i = 0 ; i < image_src.rows ; ++i ){
@@ -202,6 +221,6 @@ int main(int argc, char** argv ){
 	
 	timer2 = time(0); 
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;				
-
+*/
 	return 0;
 }
