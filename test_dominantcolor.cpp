@@ -15,7 +15,13 @@
 using namespace std;
 using namespace cv;
 
-void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram){    
+void get_histogram( Mat image_src, vector<Mat> &v_histogram_graph,  vector<vector<int>> &histogram){    
+
+	for( int i = 0 ; i < histogram.size() ; ++i){
+		for( int j = 0 ; j < histogram[0].size() ; ++j){
+			histogram[i][j] = 0;
+		}
+	}
 
     //dimensions of image
     int image_width = image_src.cols;
@@ -25,29 +31,35 @@ void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram
 
     //creation of histogram
     for( int i = 0 ; i < image_src.rows; i++){
-        for( int j = 0 ; j < image_src.cols; j++){
-            histogram [ (int) image_src.at<uchar>(i,j) ]++;
+        for( int j = 0 ; j < image_src.cols; j++){                        
+            histogram [0] [int(image_src.at<Vec3b>(i,j)[0])] ++;
+			histogram [1] [int(image_src.at<Vec3b>(i,j)[1])] ++;
+			histogram [2] [int(image_src.at<Vec3b>(i,j)[2])] ++;						
         }
-    }
-
-    int higher = -1;
-
-    //get the maximum value
-    for( vector<int>::iterator it = histogram.begin(); it != histogram.end(); it++){
-        if( higher < (*it) ) higher = (*it);
     }
 
     //Drawing Histogram
     for( int i = 0 ; i < histSize; i++) {
-    //    myfile << " val " << i << "\t hist " << histogram[i] << endl;
-        line( histogram_graph, Point( i, 0 ), Point( i, double(histogram[i] / 10) ) , Scalar(0,255,0), 2, 8, 0 );
+        line( v_histogram_graph[0], Point( i+10, 0 ), Point( i+10, double(histogram[0][i] / 100) ) , Scalar(255,0,0), 2, 8, 0 );
+        line( v_histogram_graph[1], Point( i+10, 0 ), Point( i+10, double(histogram[1][i] / 100) ) , Scalar(0,255,0), 2, 8, 0 );
+        line( v_histogram_graph[2], Point( i+10, 0 ), Point( i+10, double(histogram[2][i] / 100) ) , Scalar(0,0,255), 2, 8, 0 );
     }
+}
+
+void creator_image( int c ){
+	Mat image_src( 500, 500, CV_8UC3, Scalar( 0,0,0) ); 
+
+	for( int i = 0 ; i < image_src.rows; i++){
+    	for( int j = 0 ; j < image_src.cols; j++){                        
+        	image_src.at<Vec3b>(i,j)[c] = 255;
+		}
+	}
+	imwrite( "ExampleBasicColor.jpg", image_src );
 }
 
 void easy_dc(Mat image_src){
 
 	int RGB[] = {0,0,0};
-
 	int mn = image_src.rows * image_src.cols ;
 
 	for( int i = 0 ; i < image_src.rows ; ++i ){
@@ -64,14 +76,10 @@ void easy_dc(Mat image_src){
 
 }
 
-bool compareByvalueInt(const int &a, const int & b){
-    return a > b ;
-}
+bool compareByvalueInt(const int &a, const int & b){	return a > b ;	}
 
 
-bool compareByvalue2(const pair<int,int> &a, const pair<int,int> & b){
-    return a.second > b.second ;
-}
+bool compareByvalue2(const pair<int,int> &a, const pair<int,int> & b){	return a.second > b.second ;	}
 
 void print( vector<pair<int,int>>& v_pair ){
 	for( int i = 0 ; i < v_pair.size() ; ++i){
@@ -79,14 +87,8 @@ void print( vector<pair<int,int>>& v_pair ){
 	}
 }
 
-int diff = 100;
-int size = 4;
-int tolerance = 5;
-
-
 void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<int>& vR, vector<int>& vG, vector<int>& vB, int x0, int y0, int x1, int y1){
 
-	//cout << x << "\t" << y << endl;
 	for( int p = 0 ; p < size ; ++p){
     	for( int q = 0 ; q < v_points[p].size(); ++q){
 	    	for( int i = x0 ; i < x1 ; ++i ){
@@ -102,22 +104,83 @@ void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vec
 	}
 }
 
-int main(int argc, char** argv ){
+void get_histogram_vector( string path){
+	creator_image( 0 );
 	
+	int channels = 3;
+
+	Mat image_src = imread( path, 1); // 0, grayscale  >0, color
+
+	vector<int> v_image_src(image_src.rows*image_src.cols*3);
+
+	for( int i = 0 ; i < image_src.rows ; ++i ){
+		for( int j = 0 ; j < image_src.cols ; ++j){
+			v_image_src.push_back(image_src.at<Vec3b>(i,j)[0]) ;
+			v_image_src.push_back(image_src.at<Vec3b>(i,j)[1]) ;
+			v_image_src.push_back(image_src.at<Vec3b>(i,j)[2]) ;
+		}
+	}
+
+	vector<vector<int>> histogram2(channels,vector<int>(256));
+
+	for( int i = 0 ; i < v_image_src.size() ; i+=3){
+		histogram2[0][v_image_src[i+0]]++;
+		histogram2[1][v_image_src[i+1]]++;
+		histogram2[2][v_image_src[i+2]]++;
+	}
+
+    vector<Mat> v_histogram_graph(channels);
+
+    for( int i = 0 ; i < channels; ++i)
+    	v_histogram_graph[i] = Mat( 700, 500, CV_8UC3, Scalar( 255,255,255) );
+
+
+	for( int i = 0 ; i < histSize; i++) {
+        line( v_histogram_graph[0], Point( i+10, 0 ), Point( i+10, double(histogram2[0][i] / 100) ) , Scalar(255,0,0), 2, 8, 0 );
+        line( v_histogram_graph[1], Point( i+10, 0 ), Point( i+10, double(histogram2[1][i] / 100) ) , Scalar(0,255,0), 2, 8, 0 );
+        line( v_histogram_graph[2], Point( i+10, 0 ), Point( i+10, double(histogram2[2][i] / 100) ) , Scalar(0,0,255), 2, 8, 0 );
+    }
+
+    cout << v_histogram_graph[0].size() << endl;
+
+    imwrite( "histogram1.jpg", v_histogram_graph[0]);
+    imwrite( "histogram2.jpg", v_histogram_graph[1]);
+    imwrite( "histogram3.jpg", v_histogram_graph[2]);
+
+}
+
+int diff = 100;
+int size = 4;
+int tolerance = 5;
+
+int main(int argc, char** argv ){
+
+	int channels = 3;
+
 	Mat image_src = imread( argv[1], 1); // 0, grayscale  >0, color
-	Mat image_src2 = imread( argv[1], 0); // 0, grayscale  >0, color
+	Mat image_src2 = imread( argv[1], 1); // 0, grayscale  >0, color
+		
+    vector<Mat> histogram_graph(channels);	//Mat's vector where histogram's info will be saved
 
-    Mat histogram_graph( 700, 400, CV_8UC3, Scalar( 255,255,255) );
+    for( int i = 0 ; i < channels; ++i)
+    	histogram_graph[i] = Mat( 700, 500, CV_8UC3, Scalar( 255,255,255) );
 
-    vector<int> histogram(256) ;
-    vector<pair<int,int>> phistogram(256);
+    vector<vector<int>> histogram(channels,vector<int>(256));	//Matrix where histogram will be saved
+        
+    get_histogram( image_src, histogram_graph, histogram);
 
-    get_histogram( image_src2, histogram_graph, histogram);
+    imwrite( "histogramB.jpg", histogram_graph[0]);
+    imwrite( "histogramG.jpg", histogram_graph[1]);
+    imwrite( "histogramR.jpg", histogram_graph[2]);
 
-    for( int i = 0 ; i < histogram.size() ; ++i){   		
-   		phistogram[i] = pair<int,int>( i , histogram[i] );   		
+    vector<vector<pair<int,int>>> vphistogram( channels, vector<pair<int,int>>(histSize));
+
+    for( int i = 0 ; i < histogram.size() ; ++i){
+   		vphistogram[0][i] = pair<int,int>( i , histogram[0][i] );   		
+   		vphistogram[1][i] = pair<int,int>( i , histogram[1][i] );   		
+   		vphistogram[2][i] = pair<int,int>( i , histogram[2][i] );   		
    	}
-
+/*
     sort( phistogram.begin(), phistogram.end(), compareByvalue2 );
 
     //print( phistogram );
