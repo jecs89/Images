@@ -41,7 +41,7 @@ int main(void){
 	vector<pair<int,int>> v_points;
 
 	string line1, line2, sR, sG, sB;
-	int R=0, G=0, B=0;
+	int  G=0, B=0;
 
 	getline( image, line1 );
 
@@ -58,7 +58,7 @@ int main(void){
 	for( int i = 0 ; i < B ; ++i)
 		image_src[i].resize(G);
 
-    time_t timer = time(0); 
+    time_t timer = time(0);  
 
 	while( getline( image, line1 ) ){
 		line2 = line1;
@@ -67,20 +67,24 @@ int main(void){
 
 				//line1 = line1.substr( 0, space*3 );
 				sB = line1.substr(0,space);
-				sB = line1.substr(space,space);
-				sB = line1.substr(space*2,space);
+				sG = line1.substr(space,space);
+				sR = line1.substr(space*2,space);
+
+				cout << sB << "\t" << sG << "\t" << sR << endl;
 
 				if ( ! (istringstream(sB) >> image_src[i][j].B) ) image_src[i][j].B = 0;
 				if ( ! (istringstream(sG) >> image_src[i][j].G) ) image_src[i][j].G = 0;
 				if ( ! (istringstream(sR) >> image_src[i][j].R) ) image_src[i][j].R = 0;
 
-				line1.substr( space*3 );
+				line1 = line1.substr( space*3 );
 			}
 		}
 	}
 
 	time_t timer2 = time(0);
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+
+    cout << int(image_src[0][0].B) << endl;
 
 /*	time_t timer = time(0);
 
