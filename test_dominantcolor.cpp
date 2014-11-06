@@ -12,6 +12,10 @@
 
 #define histSize 256
 
+int size = 8;
+int diff = 255;
+int space = 4;
+
 using namespace std;
 using namespace cv;
 
@@ -81,22 +85,24 @@ bool compareByvalueInt(const int &a, const int & b){	return a > b ;	}
 
 bool compareByvalue2(const pair<int,int> &a, const pair<int,int> & b){	return a.second > b.second ;	}
 
+bool compareByvalueVec3b(const Vec3b &a, const Vec3b & b){	return a.val[0] > b.val[1] ;	}
+
 void print( vector<pair<int,int>>& v_pair ){
 	for( int i = 0 ; i < v_pair.size() ; ++i){
 		cout << v_pair[i].first << "\t" << v_pair[i].second << endl;
 	}
 }
 
-void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<int>& vR, vector<int>& vG, vector<int>& vB, int x0, int y0, int x1, int y1){
+void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<Vec3b>& BGR, int x0, int y0, int x1, int y1){
 
 	for( int p = 0 ; p < size ; ++p){
     	for( int q = 0 ; q < v_points[p].size(); ++q){
 	    	for( int i = x0 ; i < x1 ; ++i ){
 				for( int j = y0 ; j < y1 ; ++j){
 					if( i == v_points[p][q].first && j == v_points[p][q].second ){
-						image_src.at<Vec3b>(i,j)[0] = vR[p];
-						image_src.at<Vec3b>(i,j)[1] = vG[p];
-						image_src.at<Vec3b>(i,j)[2] = vB[p];
+						image_src.at<Vec3b>(i,j)[0] = BGR[p].val[0];
+						image_src.at<Vec3b>(i,j)[1] = BGR[p].val[1];
+						image_src.at<Vec3b>(i,j)[2] = BGR[p].val[2];
 					}
 				}
 			}
@@ -105,7 +111,7 @@ void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vec
 }
 
 void get_histogram_vector( string path){
-	creator_image( 0 );
+	//creator_image( 0 );
 	
 	int channels = 3;
 
@@ -149,11 +155,14 @@ void get_histogram_vector( string path){
 
 }
 
-int diff = 100;
-int size = 4;
-int tolerance = 5;
+int eucl_distance( Vec3b p1, Vec3b p2 ){
+	return sqrt( pow( p1.val[0] - p2.val[0], 2) + pow(p1.val[1] - p2.val[1],2) + pow(p1.val[2] - p2.val[2],2) );
+}
 
 int main(int argc, char** argv ){
+
+	ofstream my_file("points.data");
+	ofstream my_file2("image.data");
 
 	int channels = 3;
 
@@ -167,62 +176,102 @@ int main(int argc, char** argv ){
 
     vector<vector<int>> histogram(channels,vector<int>(256));	//Matrix where histogram will be saved
         
-    get_histogram( image_src, histogram_graph, histogram);
+    get_histogram( image_src, histogram_graph, histogram);	//Getting histogram and Mat's with histogram painted
 
-    imwrite( "histogramB.jpg", histogram_graph[0]);
+    //Writing RGB Histogram
+    imwrite( "histogramB.jpg", histogram_graph[0]);	
     imwrite( "histogramG.jpg", histogram_graph[1]);
     imwrite( "histogramR.jpg", histogram_graph[2]);
 
-    vector<vector<pair<int,int>>> vphistogram( channels, vector<pair<int,int>>(histSize));
+    vector<vector<pair<int,int>>> vphistogram( channels, vector<pair<int,int>>(histSize));	//Matrix of index and histogram value
 
-    for( int i = 0 ; i < histogram.size() ; ++i){
+    //Filling vphistogram with index and histogram value
+    for( int i = 0 ; i < histogram[0].size() ; ++i){
    		vphistogram[0][i] = pair<int,int>( i , histogram[0][i] );   		
    		vphistogram[1][i] = pair<int,int>( i , histogram[1][i] );   		
    		vphistogram[2][i] = pair<int,int>( i , histogram[2][i] );   		
    	}
-/*
-    sort( phistogram.begin(), phistogram.end(), compareByvalue2 );
 
-    //print( phistogram );
+   	//Ordering RGB histogram
+    sort( vphistogram[0].begin(), vphistogram[0].end(), compareByvalue2 );
+    sort( vphistogram[1].begin(), vphistogram[1].end(), compareByvalue2 );
+    sort( vphistogram[2].begin(), vphistogram[2].end(), compareByvalue2 );
 
-    vector<int> v_color;
-    v_color.push_back( phistogram[0].first );
-
-
-    int idx = 0;
-    for( int i = 1 ; i < histSize ; ++i){
-    	//sort(  v_color.begin(), v_color.end() );
-    	if( abs(phistogram[i-1].first - phistogram[i].first) > diff && (v_color.size() < size) ){
-			v_color.push_back( phistogram[i].first );    		
-			cout << "Color : " << phistogram[i].first << "\t" << v_color[idx++] << endl;
-    	}
-    }    
+    vector<Vec3b> v_color;
+    
+    //8 Basic Colors
+    v_color.push_back( Vec3b(0,0,0) );
+    v_color.push_back( Vec3b(0,0,255) );
+    v_color.push_back( Vec3b(0,255,0) );
+    v_color.push_back( Vec3b(0,255,255) );
+    v_color.push_back( Vec3b(255,0,0) );
+    v_color.push_back( Vec3b(255,0,255) );
+    v_color.push_back( Vec3b(255,255,0) );
+    v_color.push_back( Vec3b(255,255,255) );
 
     cout << "v_color size: " << v_color.size() << endl;
+    
+    for( int i = 0 ; i < v_color.size() ; ++i)
+    	printf( "%i %i %i %c", v_color[i].val[0], v_color[i].val[1], v_color[i].val[2], '\n' );
 
+
+    //Matrix with similiar points to colors
     vector<vector<pair<int,int>>> v_points(size);
 
     for( int p = 0 ; p < size ; p++){    	
     	for( int i = 0 ; i < image_src2.rows ; ++i ){
 			for( int j = 0 ; j < image_src2.cols ; ++j){
-				if( ( (int)image_src2.at<uchar>(i,j) - v_color[p] ) < tolerance ){
-					v_points[p].push_back( pair<int,int>(i,j) );
-					//cout << v_color[p] << endl;
+				Vec3b p1 = Vec3b( image_src2.at<Vec3b>(i,j)[0],image_src2.at<Vec3b>(i,j)[1],image_src2.at<Vec3b>(i,j)[2]);
+				Vec3b p2 = Vec3b( v_color[p].val[0], v_color[p].val[1], v_color[p].val[2] );
+				int e_distance = eucl_distance( p1, p2);
+
+				if(  e_distance < diff/2 ){
+					v_points[p].push_back( pair<int,int>(i,j) );					
 				}
 			}
 		}
-	}	
+	}
+	
+	for( int i = 0 ; i < v_points.size() ; ++i){
+		my_file << "/////" << endl;
+		for( int p = 0 ; p < v_points[i].size() ; ++p){
+			my_file << setw(space) << v_points[i][p].first << setw(space) << v_points[i][p].second << setw(space);
+		}	
+	}
 
+	my_file.close();
+	for( int i = 0 ; i < image_src.rows ; ++i){
+		for( int j = 0 ; j < image_src.cols ; ++j){
+			my_file2 << setw(space) << (int)image_src.at<Vec3b>(i,j)[0] << setw(space) << (int)image_src.at<Vec3b>(i,j)[1] << setw(space) << (int)image_src.at<Vec3b>(i,j)[2];		
+		}
+	}
+	
+	my_file2.close();
+
+	cout << v_points[0].size() << endl;
+	cout << v_points[1].size() << endl;
+	cout << v_points[2].size() << endl;
+
+	cout << "# PIXELES \n";
+	cout << image_src2.rows * image_src2.cols << endl;
+	cout << v_points[0].size() + v_points[1].size() + v_points[2].size() << endl;
+/*
 	vector<int> vR(size);
 	vector<int> vG(size);
 	vector<int> vB(size);
 
-	for( int i = 0 ; i < size ; ++i){
-		vR.push_back( image_src.at<Vec3b>(v_points[i][0].first,v_points[i][0].second)[0]  );
-		vG.push_back( image_src.at<Vec3b>(v_points[i][0].first,v_points[i][0].second)[1]  );
-		vB.push_back( image_src.at<Vec3b>(v_points[i][0].first,v_points[i][0].second)[2]  );
+	for( int i = 0 ; i < v_color.size() ; ++i){
+		vB.push_back( v_color[i].val[0]  );
+		vG.push_back( v_color[i].val[1]  );
+		vR.push_back( v_color[i].val[2]  );
+
+		//cout << vB[i] << "\t " << vG[i] << "\t" << vR[i] << endl;
 	}
 
+	for( int i = 0 ; i < size ; ++i){
+		cout << vB[i] << "\t " << vG[i] << "\t" << vR[i] << endl;
+	}
+*/
 	int nThreads = thread::hardware_concurrency();
 	vector<thread> ths(nThreads);
 
@@ -251,7 +300,7 @@ int main(int argc, char** argv ){
     time_t timer = time(0); 
 
 	for ( int x = 0, y = 0, i = 0 ; x < image_src.rows && y < image_src.cols && i < nThreads; x+=( image_src.rows/nThreads ), y+=(image_src.cols/nThreads), i++ ){
-		ths[i] = thread( dominant_color, ref(image_src), ref(v_points), ref(vR), ref(vG), ref(vB), v_blocks[i].first.first, v_blocks[i].first.second, v_blocks[i].second.first, v_blocks[i].second.second);
+		ths[i] = thread( dominant_color, ref(image_src), ref(v_points), ref(v_color), v_blocks[i].first.first, v_blocks[i].first.second, v_blocks[i].second.first, v_blocks[i].second.second);
 	}
 	
 	time_t timer2 = time(0); 
@@ -267,23 +316,6 @@ int main(int argc, char** argv ){
 	imwrite( "dominant_color.jpg", image_src);
 
     timer = time(0); 
-	/*
-    for( int p = 0 ; p < size ; ++p){
-    	for( int q = 0 ; q < v_points[p].size(); ++q){
-	    	for( int i = 0 ; i < image_src.rows ; ++i ){
-				for( int j = 0 ; j < image_src.cols ; ++j){
-					if( i == v_points[p][q].first && j == v_points[p][q].second ){
-						image_src.at<Vec3b>(i,j)[0] = vR[p];
-						image_src.at<Vec3b>(i,j)[1] = vG[p];
-						image_src.at<Vec3b>(i,j)[2] = vB[p];
-					}
-				}
-			}
-		}	
-	}
-	
-	timer2 = time(0); 
-    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;				
-*/
+
 	return 0;
 }
