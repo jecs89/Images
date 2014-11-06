@@ -74,11 +74,12 @@ int main(void){
 		cout << "Problems opening file \n";
 	}
 
-	int ncolors = 8;
+	int ncolors = 8;	// # basic colors
 
 	vector<vector<RGB>> image_src;	//Matrix of image
 	vector<vector<pair<int,int>>> v_points(ncolors);	//Matrix of points according to ncolors
 
+	//To read from file
 	string line1, line2, sR, sG, sB;
 	int  G=0, B=0;
 
@@ -106,12 +107,9 @@ int main(void){
 		for( int i = 0 ; i < image_src.size(); ++i){
 			for( int j = 0 ; j < image_src[0].size(); ++j){
 
-				//line1 = line1.substr( 0, space*3 );
 				sB = line1.substr(0,space);
 				sG = line1.substr(space,space);
 				sR = line1.substr(space*2,space);
-
-				//cout << sB << "\t" << sG << "\t" << sR << endl;
 
 				if ( ! (istringstream(sB) >> image_src[i][j].B) ) image_src[i][j].B = 0;
 				if ( ! (istringstream(sG) >> image_src[i][j].G) ) image_src[i][j].G = 0;
@@ -130,10 +128,7 @@ int main(void){
     timer = time(0);
     int i = -1;
 
-    // while( !points.eof() ){
-    // 	getline(points,line1);
-    // 	cout << line1 << endl;
-    // }
+    // while( !points.eof() ){    	getline(points,line1);    	cout << line1 << endl; }
     
     //Reading points
     while( !points.eof() ){
@@ -230,7 +225,6 @@ int main(void){
 		comp<<<(N+M-1)/M,M>>> ( d_image_src, d_points, v_color[i], image_src.size(), image_src[0].size(), sum );
 	}
 	
-
 	// Copy result back to host
 	cudaMemcpy( pimage_src, d_image_src, sizeimag, cudaMemcpyDeviceToHost);
 
@@ -240,7 +234,9 @@ int main(void){
 
 	timer = time(0);
 	ofstream image_converted("image_conv.data");
+	image_converted << setw(space) << image_src.size() << setw(space) << image_src[0].size() << endl;
 
+	//Writing new Mat image
 	for( int i = 0 ; i < image_src.size() ; ++i ){
 		for( int j = 0 ; j < image_src[0].size() ; ++j ){
 			image_src[i][j] = pimage_src[i+j];
@@ -252,6 +248,7 @@ int main(void){
 
 	cout << "Writing image ::: " ;
 	cout << "Tiempo total: " << difftime(timer2, timer) << endl;
+	
 	// Cleanup
 	free(ppoints);
 	free(pimage_src);	
