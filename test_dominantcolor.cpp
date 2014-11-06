@@ -19,6 +19,9 @@ int space = 4;
 using namespace std;
 using namespace cv;
 
+// g++ -o test_dominantcolor  -L /usr/local/cuda-6.5/lib64 `pkg-config opencv --cflags` test_dominantcolor.cpp `pkg-config opencv --libs` -std=c++11
+
+
 void get_histogram( Mat image_src, vector<Mat> &v_histogram_graph,  vector<vector<int>> &histogram){    
 
 	for( int i = 0 ; i < histogram.size() ; ++i){
@@ -233,13 +236,16 @@ int main(int argc, char** argv ){
 	}
 	
 	for( int i = 0 ; i < v_points.size() ; ++i){
-		my_file << "/////" << endl;
+		my_file << "/////\n" ;
 		for( int p = 0 ; p < v_points[i].size() ; ++p){
 			my_file << setw(space) << v_points[i][p].first << setw(space) << v_points[i][p].second << setw(space);
-		}	
+		}
+		my_file << endl;	
 	}
 
 	my_file.close();
+
+	my_file2 << setw(space) << image_src.rows << setw(space) << image_src.cols << endl;
 	for( int i = 0 ; i < image_src.rows ; ++i){
 		for( int j = 0 ; j < image_src.cols ; ++j){
 			my_file2 << setw(space) << (int)image_src.at<Vec3b>(i,j)[0] << setw(space) << (int)image_src.at<Vec3b>(i,j)[1] << setw(space) << (int)image_src.at<Vec3b>(i,j)[2];		
@@ -254,25 +260,14 @@ int main(int argc, char** argv ){
 
 	cout << "# PIXELES \n";
 	cout << image_src2.rows * image_src2.cols << endl;
-	cout << v_points[0].size() + v_points[1].size() + v_points[2].size() << endl;
-/*
-	vector<int> vR(size);
-	vector<int> vG(size);
-	vector<int> vB(size);
 
-	for( int i = 0 ; i < v_color.size() ; ++i){
-		vB.push_back( v_color[i].val[0]  );
-		vG.push_back( v_color[i].val[1]  );
-		vR.push_back( v_color[i].val[2]  );
+	int sum	= 0;
+	for( int i = 0 ; i < size ; ++i)
+		sum += v_points[i].size();
+	
+	cout << sum << endl;
 
-		//cout << vB[i] << "\t " << vG[i] << "\t" << vR[i] << endl;
-	}
-
-	for( int i = 0 ; i < size ; ++i){
-		cout << vB[i] << "\t " << vG[i] << "\t" << vR[i] << endl;
-	}
-*/
-	int nThreads = thread::hardware_concurrency();
+/*	int nThreads = thread::hardware_concurrency();
 	vector<thread> ths(nThreads);
 
 	cout << ths.size() << endl;
@@ -293,10 +288,6 @@ int main(int argc, char** argv ){
 		}
 	}
 
-	// cout << v_blocks[1].first.first << endl;
-	// cout << v_blocks[1].first.second << endl;
-
-
     time_t timer = time(0); 
 
 	for ( int x = 0, y = 0, i = 0 ; x < image_src.rows && y < image_src.cols && i < nThreads; x+=( image_src.rows/nThreads ), y+=(image_src.cols/nThreads), i++ ){
@@ -314,8 +305,6 @@ int main(int argc, char** argv ){
 	
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;		
 	imwrite( "dominant_color.jpg", image_src);
-
-    timer = time(0); 
-
+*/    
 	return 0;
 }
