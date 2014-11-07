@@ -2,6 +2,7 @@
 #include <vector>
 
 using namespace cv;
+using namespace std;
 
 typedef vector< vector<double> > matrix;
 typedef vector< vector<int> > m_int;

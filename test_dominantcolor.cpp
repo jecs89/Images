@@ -11,9 +11,9 @@
 
 #define histSize 256
 
-int size = 8;
+int nrocolors = 8;
 int diff = 255;
-int space = 4;
+int spc = 4;
 
 using namespace std;
 using namespace cv;
@@ -173,7 +173,7 @@ int main(int argc, char** argv ){
 	Mat image_src = imread( argv[1], 1); // 0, grayscale  >0, color
 	Mat image_src2 = imread( argv[1], 1); // 0, grayscale  >0, color
 		
-    vector<Mat> histogram_graph(channels);	//Mat's vector where histogram's info will be saved
+    /*vector<Mat> histogram_graph(channels);	//Mat's vector where histogram's info will be saved
 
     //Initializing histogram_graph
     for( int i = 0 ; i < channels; ++i)
@@ -201,7 +201,7 @@ int main(int argc, char** argv ){
     sort( vphistogram[0].begin(), vphistogram[0].end(), compareByvalue2 );
     sort( vphistogram[1].begin(), vphistogram[1].end(), compareByvalue2 );
     sort( vphistogram[2].begin(), vphistogram[2].end(), compareByvalue2 );
-
+*/
     vector<Vec3b> v_color;
     
     //8 Basic Colors
@@ -221,11 +221,11 @@ int main(int argc, char** argv ){
 
 
     //Matrix with similiar points to colors
-    vector<vector<pair<int,int>>> v_points(size);
+    vector<vector<pair<int,int>>> v_points(nrocolors);
 
     int factor = 2;
     //Filling v_points with points near to k colors
-    for( int p = 0 ; p < size ; p++){    	
+    for( int p = 0 ; p < nrocolors ; p++){    	
     	for( int i = 0 ; i < image_src2.rows ; ++i ){
 			for( int j = 0 ; j < image_src2.cols ; ++j){
 				Vec3b p1 = Vec3b( image_src2.at<Vec3b>(i,j)[0],image_src2.at<Vec3b>(i,j)[1],image_src2.at<Vec3b>(i,j)[2]);
@@ -243,7 +243,7 @@ int main(int argc, char** argv ){
 	for( int i = 0 ; i < v_points.size() ; ++i){
 		my_file << "/////\n" ;
 		for( int p = 0 ; p < v_points[i].size() ; ++p){
-			my_file << setw(space) << v_points[i][p].first << setw(space) << v_points[i][p].second << setw(space);
+			my_file << setw(spc) << v_points[i][p].first << setw(spc) << v_points[i][p].second << setw(spc);
 		}
 		my_file << endl;	
 	}
@@ -251,10 +251,10 @@ int main(int argc, char** argv ){
 	my_file.close();
 
 	//Writing file with image_src
-	my_file2 << setw(space) << image_src.rows << setw(space) << image_src.cols << endl;
+	my_file2 << setw(spc) << image_src.rows << setw(spc) << image_src.cols << endl;
 	for( int i = 0 ; i < image_src.rows ; ++i){
 		for( int j = 0 ; j < image_src.cols ; ++j){
-			my_file2 << setw(space) << (int)image_src.at<Vec3b>(i,j)[0] << setw(space) << (int)image_src.at<Vec3b>(i,j)[1] << setw(space) << (int)image_src.at<Vec3b>(i,j)[2];		
+			my_file2 << setw(spc) << (int)image_src.at<Vec3b>(i,j)[0] << setw(spc) << (int)image_src.at<Vec3b>(i,j)[1] << setw(spc) << (int)image_src.at<Vec3b>(i,j)[2];		
 		}
 	}
 	
@@ -268,7 +268,7 @@ int main(int argc, char** argv ){
 	cout << image_src2.rows * image_src2.cols << endl;
 
 	int sum	= 0;
-	for( int i = 0 ; i < size ; ++i)
+	for( int i = 0 ; i < nrocolors ; ++i)
 		sum += v_points[i].size();
 	
 	cout << sum << endl;

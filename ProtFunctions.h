@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <math.h>
 #include <vector>
+#include <thread>
 
 #include "myTypes.h"
 #include "myConstants.h"
@@ -109,3 +110,12 @@ void function_borders( string path );
 void function_morphological( string path );
 
 void function_segmentation( string path );
+
+
+void function_dominantcolor( string path );
+
+void dominant_color(Mat& image_src, vector<vector<pair<int,int>>>& v_points, vector<Vec3b>& BGR, int x0, int y0, int x1, int y1);
+
+int eucl_distance( Vec3b p1, Vec3b p2 );
+
+bool isFind( string s, string pat);
