@@ -50,6 +50,9 @@ int main(int argc, char** argv ){
 
     for( int i = 0 ; i < cont ; ++i){
 
+        vt_borders.clear();
+        vm_borders.clear();
+
         cout << v_names[i] << endl;
         
         function_equalization( v_names[i] );
@@ -65,6 +68,8 @@ int main(int argc, char** argv ){
         function_segmentation( v_names[i] );        
 
         function_dominantcolor( v_names[i] );
+
+        comp_borders();
 
         features << endl ;
     }
