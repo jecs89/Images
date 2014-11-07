@@ -869,6 +869,8 @@ void initMat( Mat& img_src , int val ){
     }
 }
 
+bool compareByvalue2(const pair<int,int> &a, const pair<int,int> & b){  return a.second > b.second ;    }
+
 void function_equalization( string path ){
 
     string true_name = path.substr(0,path.find("."));
@@ -903,12 +905,36 @@ void function_equalization( string path ){
     //Getting and drawing histogram
     get_histogram( image_src, histogram_graph, histogram);
 
-    features << "Histogram" << endl;
-    //Writing histogram to features
-    for( int i = 0;  i < histogram.size(); ++i)
-        features << setw(spc_file) << histogram[i] ;
+    //Getting a number of features from histogram
+    vector<int> ordered_histogram = histogram;
 
-    features << endl;
+    vector<pair<int,int>> v_histogram(256);
+
+    for( int i = 0 ; i < histogram.size() ; ++i){
+        //if( histogram[i] > 0 || histogram[i] < (image_src.rows*image_src.cols) ){        
+            v_histogram.push_back( pair<int,int>(i, histogram[i]) );
+        //}
+        //else if( histogram[i] < 0 || histogram[i] > (image_src.rows*image_src.cols) ){        
+        //    v_histogram.push_back( pair<int,int>(i, 0 ) );
+        //}
+    }
+
+    sort( v_histogram.begin(), v_histogram.end(), compareByvalue2 );
+
+    int num_features_histogram = 5;
+
+    //features << "Histogram" << endl;
+    for( int i = 0;  i < num_features_histogram; ++i)
+        features << setw(spc_file) << v_histogram[i].first <<  setw(spc_file) << v_histogram[i].second;
+
+    // for( int i = 0;  i < num_features_histogram; ++i)
+    //     features << setw(spc_file) << v_histogram[v_histogram.size()-i - 1].first <<  setw(spc_file) << v_histogram[v_histogram.size()-1-i].second;
+    
+    // //Writing histogram to features
+    // for( int i = 0;  i < histogram.size(); ++i)
+    //     //features << setw(spc_file) << histogram[i] ;
+
+    //features << endl;
     
     //mat of destiny
     Mat image_dest = imread( folder_path + prefix + true_name + "_grayscale.jpg", 0);
@@ -1354,7 +1380,7 @@ void function_dominantcolor( string path ){
     // cout << "# PIXELES \n";
     // cout << image_src2.rows * image_src2.cols << endl;
 
-    features << "DominantColor" << endl;
+    //features << "DominantColor" << endl;
     int sum = 0;
     for( int i = 0 ; i < nrocolors ; ++i){
         sum += v_points[i].size();
@@ -1430,11 +1456,13 @@ void comp_borders(){
 
     int similarpoints = 0;
 
+    //features << "\nComp Borders" << endl;
     for( int i = 0 ; i < vt_borders.size() ; ++i ){
         for( int j = 0 ; j < vm_borders.size() ; ++j){
             if(  abs(vt_borders[i].first - vm_borders[j].first ) + abs(vt_borders[i].second - vm_borders[j].second ) <= tol_bor ){
-                features << setw(spc_file) << similarpoints << endl;
+                similarpoints++;
             }
         }
     }
+    features << setw(spc_file) << similarpoints << endl;
 }
