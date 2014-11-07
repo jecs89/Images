@@ -2,10 +2,20 @@
 
 #include "ProtFunctions.h"
 
+string folder_path = "/home/jecs89/git_folder/Images/Experiments/BD1/";
+
+#define spc_file 6
+
 using namespace cv;
 using namespace std;
 
 ofstream my_file("fourier.data"); 
+ofstream features("/home/jecs89/git_folder/Images/Experiments/BD1/features.data"); 
+
+Mat t_borders;
+Mat m_borders;
+vector<pair<int,int>> vt_borders;
+vector<pair<int,int>> vm_borders;
 
 void displayMat( Mat& img_src, string namewindow ){
     namedWindow( namewindow, CV_WINDOW_AUTOSIZE );
@@ -340,7 +350,7 @@ void get_histogram( Mat image_src, Mat &histogram_graph,  vector<int> &histogram
     int image_width = image_src.cols;
     int image_height = image_src.rows;
 
-    cout << "Image's dimension: " << image_src.rows << "\t" << image_src.cols << endl;
+    //cout << "Image's dimension: " << image_src.rows << "\t" << image_src.cols << endl;
     //cout << image_height   << "\t" << image_width    << endl;
 
     //creation of histogram
@@ -857,14 +867,18 @@ void initMat( Mat& img_src , int val ){
             img_src.at<uchar>(i,j) = val;
         }
     }
-
 }
 
 void function_equalization( string path ){
 
-    cout << "Equalization\n";
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
 
-    cout << path << endl;
+    string prefix = "Eq/";
+
+    cout << "Equalization ";
+
+    //cout << path << endl;
     
     //Initializing mat
     Mat image_src = imread( path, 0); // 0, grayscale  >0, color
@@ -875,17 +889,29 @@ void function_equalization( string path ){
     //reading image
 
     //writing grayscale image
-    imwrite("image_grayscale.jpg", image_src);
+    imwrite( folder_path + prefix + true_name + "_grayscale.jpg", image_src);
 
     //vector for histogram and eq_histogram
     vector<int> histogram(256) ;
     vector<int> eq_histogram(256);
 
+    for( int i = 0 ; i < histogram.size() ; ++i){
+        histogram[i] = 0;
+        eq_histogram[i] = 0;
+    }
+    
     //Getting and drawing histogram
     get_histogram( image_src, histogram_graph, histogram);
+
+    features << "Histogram" << endl;
+    //Writing histogram to features
+    for( int i = 0;  i < histogram.size(); ++i)
+        features << setw(spc_file) << histogram[i] ;
+
+    features << endl;
     
     //mat of destiny
-    Mat image_dest = imread("image_grayscale.jpg", 0);
+    Mat image_dest = imread( folder_path + prefix + true_name + "_grayscale.jpg", 0);
 
     get_eqhistogram( image_src, image_dest, eq_histogram_graph, histogram, eq_histogram );
    
@@ -900,16 +926,21 @@ void function_equalization( string path ){
     //cout << endl;
 
     //Writing eq image
-    imwrite("image_eq.jpg", image_dest);
+    imwrite( folder_path + prefix + true_name + "_eq.jpg", image_dest);
 
     //Display
-    displayMat( image_src, "Source Image" );
-    displayMat( image_dest, "Eq Image" );
+    // displayMat( image_src, "Source Image" );
+    // displayMat( image_dest, "Eq Image" );
 }
 
 void function_sfilters( string path ){
 
-    cout << "Spatial Filters\n";
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
+
+    string prefix = "SFilter/";
+
+    cout << " Spatial Filters ";
 
     Mat image_src = imread( path, 0); // 0, grayscale  >0, color
 
@@ -920,11 +951,10 @@ void function_sfilters( string path ){
     smooth_filter( image_src, img_padded);
 
     //Writing smoothed image
-    imwrite("image_meanfilter.jpg", img_padded);    
-
+    imwrite( folder_path + prefix + true_name + "_meanfilter.jpg", img_padded);    
 
     //Applying threshold
-    Mat img_threshold = imread("image_meanfilter.jpg", 0);
+    Mat img_threshold = imread( folder_path + prefix + true_name + "_meanfilter.jpg", 0);
     //Mat img_threshold = imread("image_grayscale.jpg", 0);
  
     // thresh value
@@ -933,30 +963,36 @@ void function_sfilters( string path ){
     threshold( img_threshold, thresh_value);
 
     //Writing threshold image
-    imwrite("image_threshold.jpg", img_threshold);
+    imwrite( folder_path + prefix + true_name + "_threshold.jpg", img_threshold);
 
     //Median Filter
-    Mat img_median = imread("image_meanfilter.jpg", 0);
+    Mat img_median = imread( path, 0);
     //Mat img_median = imread("image_grayscale.jpg", 0);
 
     median(img_median);
 
-    imwrite("image_medianfilter.jpg", img_threshold);
+    imwrite( folder_path + prefix + true_name + "_medianfilter.jpg", img_median);
 
     //Display
-    displayMat( img_padded, "Mean Filter" );
-    displayMat( img_median, "Median Filter" );
+    // displayMat( img_padded, "Mean Filter" );
+    // displayMat( img_median, "Median Filter" );
 
 }
 
 void function_tfilters( string path ){
-    cout << "FOURIER" << endl;
+
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
+
+    string prefix = "TFilter/";
+
+    cout << "Fourier ";
     
     //test_fourier(  argv[1] )   ;
 
     Mat f_source = imread( path, 0);
     Mat f_reverted = imread( path, 0);
-    Mat f_butterworth = imread("filter_butterworth.png", 0) ;
+    Mat f_butterworth = imread( folder_path + prefix + "filter_butterworth.png", 0) ;
 
     //matrix C_r( f_source.rows, vector<double>(f_source.cols));
     //matrix C_i( f_source.rows, vector<double>(f_source.cols));
@@ -1013,10 +1049,10 @@ void function_tfilters( string path ){
     }
 
 
-    imwrite( "image_fourier.jpg", f_source);
+    imwrite( folder_path + prefix + true_name + "_fourier.jpg", f_source);
 
     time_t timer2 = time(0);
-    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+    //cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 
 
     filter_butterworth( f_source, f_butterworth, f_source);
@@ -1030,19 +1066,25 @@ void function_tfilters( string path ){
 
     ComplextoMat( v_complex, f_reverted);    
 
-    imwrite( "imag_reverted.jpg", f_reverted);
+    imwrite( folder_path + prefix + true_name + "_reverted.jpg", f_reverted);
 
     timer2 = time(0);
-    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
+    //cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 
     //Display
-    displayMat( f_source, "FF Transform" );
-    displayMat( f_reverted, "FFI Transform" );    
+    // displayMat( f_source, "FF Transform" );
+    // displayMat( f_reverted, "FFI Transform" );    
 }
 
 void function_borders( string path ){
 
-    cout << "Getting borders\n";
+
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
+
+    string prefix = "Borders/";
+
+    cout << "Borders ";
 
     Mat image_dest = imread(path, 0);
     Mat img_threshold = imread(path, 0);
@@ -1054,15 +1096,31 @@ void function_borders( string path ){
 
     get_bordersthreshold( img_threshold, borders );
 
-    imwrite( "image_borders.jpg", borders );
+    imwrite( folder_path + prefix + true_name + "_borders.jpg", borders );
+
+    for( int i = 0 ; i < borders.rows ; ++i){
+        for( int j = 0 ; j < borders.cols ; ++j){
+            if( borders.at<uchar>(i,j)  == 255){
+                //features << setw(spc_file) << i << setw(spc) << j ;
+                vt_borders.push_back( pair<int,int>(i,j) );
+            }
+        }
+    }
 
     //Display
-    displayMat( borders, "Thresh Border" );
+    // displayMat( borders, "Thresh Border" );
+
+    t_borders = borders ;
 }
 
 void function_morphological( string path ){
 
-    cout << "Morpholical Operations\n";
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
+
+    string prefix = "OMorph/";
+
+    cout << "Morpholical Operations ";
 
     Mat f_morph = imread( path, 0);
     Mat f_morph2 = imread( path, 0);
@@ -1070,7 +1128,7 @@ void function_morphological( string path ){
     threshold( f_morph, 150);
     threshold( f_morph2, 150);
 
-    imwrite( "image_thresh.jpg", f_morph );
+    imwrite( folder_path + prefix + true_name + "_thresh.jpg", f_morph );
 
     m_int m_morph( f_morph.rows, vector<int>(f_morph.cols) );
 
@@ -1089,14 +1147,14 @@ void function_morphological( string path ){
 
     matrixtoMat( m_morph, f_morph );
 
-    imwrite( "image_morph_dilation.jpg", f_morph );
+    imwrite( folder_path + prefix + true_name + "_morph_dilation.jpg", f_morph );
     
     Mattomatrix( f_morph2, m_morph );
 
     morph_erosion( m_morph, struct_elem );
     matrixtoMat( m_morph, f_morph );
 
-    imwrite( "image_morph_erosion.jpg", f_morph );
+    imwrite( folder_path + prefix + true_name + "_morph_erosion.jpg", f_morph );
 
     for( int i = 0 ; i < f_morph.rows; i++){
         for( int j = 0 ; j < f_morph.cols; j++){
@@ -1104,28 +1162,45 @@ void function_morphological( string path ){
         }
     }
 
-    imwrite( "image_contours.jpg", f_morph );    
+    imwrite( folder_path + prefix + true_name + "_contours.jpg", f_morph );    
+
+    for( int i = 0 ; i < f_morph.rows ; ++i){
+        for( int j = 0 ; j < f_morph.cols ; ++j){
+            if( f_morph.at<uchar>(i,j)  == 255){
+                //features << setw(spc_file) << i << setw(spc) << j ;
+                vm_borders.push_back( pair<int,int>(i,j));
+            }
+        }
+    }
 
     //Display
-    displayMat( f_morph, "Dilation Operation" );    
-    displayMat( f_morph, "Erosion Operation" );
+    // displayMat( f_morph, "Dilation Operation" );    
+    // displayMat( f_morph, "Erosion Operation" );
+
+    m_borders = f_morph;
 
 }
 
 void function_segmentation( string path ){
 
-    Mat image_src = imread( path, 0); // 0, grayscale  >0, color
+    cout << "Segmentation ";
 
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
+
+    string prefix = "Segmentation/";
+
+    Mat image_src = imread( path, 0); // 0, grayscale  >0, color
 
     Mat image_superpixel = imread( path, 0);
 
     get_superpixels( image_src, image_superpixel, 3);
-    imwrite("superpixel_5x5.jpg", image_superpixel);
+    imwrite( folder_path + prefix + true_name + "_superpixel_5x5.jpg", image_superpixel);
 
     for( int i = 0 ; i < 10; i++){
-        image_superpixel = imread( "superpixel_5x5.jpg", 0);
+        image_superpixel = imread( folder_path + prefix + true_name + "_superpixel_5x5.jpg", 0);
         get_superpixels( image_superpixel, image_superpixel, 3);
-        imwrite("superpixel_5x5.jpg", image_superpixel);
+        imwrite( folder_path + prefix + true_name + "_superpixel_5x5.jpg", image_superpixel);
 
     }
 
@@ -1133,14 +1208,14 @@ void function_segmentation( string path ){
 
     for( int i = 0; i < image_sum.rows; i++){
         for( int j = 0; j < image_sum.cols; j++){
-        image_sum.at<uchar>(i,j) = int(image_sum.at<uchar>(i,j)) - int( image_superpixel.at<uchar>(i,j) );
+            image_sum.at<uchar>(i,j) = int(image_sum.at<uchar>(i,j)) - int( image_superpixel.at<uchar>(i,j) );
         }
     }
 
-    imwrite("image_sum.jpg", image_sum);
+    imwrite( folder_path + prefix + true_name + "_sum.jpg", image_sum);
 
     //Display
-    displayMat( image_sum, "Superpixel using a mean grid" );    
+    // displayMat( image_sum, "Superpixel using a mean grid" );    
 }
 
 //Dominant color ready for threads
@@ -1169,9 +1244,16 @@ int eucl_distance( Vec3b p1, Vec3b p2 ){
 
 void function_dominantcolor( string path ){
 
+    cout << "DC\n";
+
+    string true_name = path.substr(0,path.find("."));
+    //cout << true_name << endl;
+
+    string prefix = "DominantColor/";
+
     //Files to save points and Mat image_src
-    ofstream my_file("points.data");
-    ofstream my_file2("image.data");
+    // ofstream my_file( folder_path + prefix + true_name + "points.data");
+    // ofstream my_file2( folder_path + prefix + true_name + "image.data");
 
     int channels = 3;   // # channels
 
@@ -1244,85 +1326,88 @@ void function_dominantcolor( string path ){
         }
     }
     
-    //Writing file with points
-    for( int i = 0 ; i < v_points.size() ; ++i){
-        my_file << "/////\n" ;
-        for( int p = 0 ; p < v_points[i].size() ; ++p){
-            my_file << setw(spc) << v_points[i][p].first << setw(spc) << v_points[i][p].second << setw(spc);
-        }
-        my_file << endl;    
-    }
+    // //Writing file with points
+    // for( int i = 0 ; i < v_points.size() ; ++i){
+    //     my_file << "/////\n" ;
+    //     for( int p = 0 ; p < v_points[i].size() ; ++p){
+    //         my_file << setw(spc) << v_points[i][p].first << setw(spc) << v_points[i][p].second << setw(spc);
+    //     }
+    //     my_file << endl;    
+    // }
 
-    my_file.close();
+    // my_file.close();
 
-    //Writing file with image_src
-    my_file2 << setw(spc) << image_src.rows << setw(spc) << image_src.cols << endl;
-    for( int i = 0 ; i < image_src.rows ; ++i){
-        for( int j = 0 ; j < image_src.cols ; ++j){
-            my_file2 << setw(spc) << (int)image_src.at<Vec3b>(i,j)[0] << setw(spc) << (int)image_src.at<Vec3b>(i,j)[1] << setw(spc) << (int)image_src.at<Vec3b>(i,j)[2];        
-        }
-    }
+    // //Writing file with image_src
+    // my_file2 << setw(spc) << image_src.rows << setw(spc) << image_src.cols << endl;
+    // for( int i = 0 ; i < image_src.rows ; ++i){
+    //     for( int j = 0 ; j < image_src.cols ; ++j){
+    //         my_file2 << setw(spc) << (int)image_src.at<Vec3b>(i,j)[0] << setw(spc) << (int)image_src.at<Vec3b>(i,j)[1] << setw(spc) << (int)image_src.at<Vec3b>(i,j)[2];        
+    //     }
+    // }
     
-    my_file2.close();
+    // my_file2.close();
 
     // cout << v_points[0].size() << endl;
     // cout << v_points[1].size() << endl;
     // cout << v_points[2].size() << endl;
 
-    cout << "# PIXELES \n";
-    cout << image_src2.rows * image_src2.cols << endl;
+    // cout << "# PIXELES \n";
+    // cout << image_src2.rows * image_src2.cols << endl;
 
+    features << "DominantColor" << endl;
     int sum = 0;
-    for( int i = 0 ; i < nrocolors ; ++i)
+    for( int i = 0 ; i < nrocolors ; ++i){
         sum += v_points[i].size();
+        features << setw(spc_file) << v_points[i].size() ; 
+    }
     
-    cout << sum << endl;
+    // cout << sum << endl;
 
     //Parallel Process
     int nThreads = thread::hardware_concurrency();  // # threads
     vector<thread> ths(nThreads);   // threads vector
 
-    cout << ths.size() << endl;
+    // cout << ths.size() << endl;
 
     //dimensions of blocks
     double incx = double(image_src.rows)/2;
     double incy = double(image_src.cols)/4;
 
-    cout << incx << "\t" << incy << endl;
+    // cout << incx << "\t" << incy << endl;
 
     vector< pair< pair<int,int> , pair<int,int> > > v_blocks;   // vector with (x0,y0) - (x1,y1) of blocks corners
 
     //Filling v_blocks with indexes
     for ( double x = 0 ; x < image_src.rows - 1 ; x+=incx ){
         for( double y = 1 ; y < image_src.cols - 1; y+=incy ){
-            cout << int(x) << "\t" << int(y - 1) << "\t--\t" << int(x + double(image_src.rows)/2 )<< "\t" << int( y -1+ double(image_src.cols)/4 )<< endl ;
+            // cout << int(x) << "\t" << int(y - 1) << "\t--\t" << int(x + double(image_src.rows)/2 )<< "\t" << int( y -1+ double(image_src.cols)/4 )<< endl ;
 
             v_blocks.push_back( pair<pair<int,int>, pair<int,int>>( 
                                 pair<int,int>(int(x),int(y - 1)) , pair<int,int>(int(x + double(image_src.rows)/2 ),int( y -1+ double(image_src.cols)/4 )) )  );
         }
     }
 
-    time_t timer = time(0); 
+    // time_t timer = time(0); 
 
     //Launching threads
     for ( int x = 0, y = 0, i = 0 ; x < image_src.rows && y < image_src.cols && i < nThreads; x+=( image_src.rows/nThreads ), y+=(image_src.cols/nThreads), i++ ){
         ths[i] = thread( dominant_color, ref(image_src), ref(v_points), ref(v_color), v_blocks[i].first.first, v_blocks[i].first.second, v_blocks[i].second.first, v_blocks[i].second.second);
     }
     
-    time_t timer2 = time(0); 
+    // time_t timer2 = time(0); 
 
-    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;     
+    // cout <<"Tiempo total: " << difftime(timer2, timer) << endl;     
 
-    timer = time(0); 
+    // timer = time(0); 
 
     //Joining threads
     for ( int i = 0; i < nThreads; i++ )
         ths[i].join();
     
-    timer2 = time(0); 
+    // timer2 = time(0); 
     
-    cout <<"Tiempo total: " << difftime(timer2, timer) << endl;     
-    imwrite( path + "_dominant_color.jpg", image_src);       
+    // cout <<"Tiempo total: " << difftime(timer2, timer) << endl;     
+    imwrite( folder_path + prefix + true_name + "_dominant_color.jpg", image_src);       
 }
 
 bool isFind( string s, string pat){
@@ -1334,3 +1419,22 @@ bool isFind( string s, string pat){
     return ( found < 0 || found > s.size() ) ? 0 : 1;
 }
 
+void comp_borders(){
+    int sizebor1 = t_borders.rows * t_borders.cols;
+    int sizebor2 = m_borders.rows * m_borders.cols;
+
+    int sizevbor1 = vt_borders.size();
+    int sizevbor2 = vm_borders.size();
+
+    int tol_bor = 10;
+
+    int similarpoints = 0;
+
+    for( int i = 0 ; i < vt_borders.size() ; ++i ){
+        for( int j = 0 ; j < vm_borders.size() ; ++j){
+            if(  abs(vt_borders[i].first - vm_borders[j].first ) + abs(vt_borders[i].second - vm_borders[j].second ) <= tol_bor ){
+                features << setw(spc_file) << similarpoints << endl;
+            }
+        }
+    }
+}

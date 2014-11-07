@@ -26,7 +26,7 @@ int main(int argc, char** argv ){
        while (epdf = readdir(dpdf)){
           string name = epdf->d_name;
           if( isFind(name, postfix)){
-            printf("Filename: %s %s",epdf->d_name, "\n");
+            //printf("Filename: %s %s",epdf->d_name, "\n");
           
             //Mat reader = imread( name, 1);
             v_names.push_back( name );
@@ -49,6 +49,8 @@ int main(int argc, char** argv ){
     time_t timer = time(0); 
 
     for( int i = 0 ; i < cont ; ++i){
+
+        cout << v_names[i] << endl;
         
         function_equalization( v_names[i] );
 
@@ -64,8 +66,9 @@ int main(int argc, char** argv ){
 
         function_dominantcolor( v_names[i] );
 
+        features << endl ;
     }
-   
+
     time_t timer2 = time(0); 
     cout <<"Tiempo total: " << difftime(timer2, timer) << endl;
 
