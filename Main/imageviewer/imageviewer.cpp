@@ -63,47 +63,13 @@ string folder_path = "/home/jecs89/qt_projects/imageviewer/";
 typedef vector< vector<double> > matrix;
 typedef vector< vector<int> > m_int;
 
-void fill_vector( vector<my_Complex>& source, int size){
-    for( int i = 0 ; i < size; ++i){
-        source.push_back( my_Complex(0,0) );
-    }
-}
+//copy values of double matrix to Mat
+void matrixtoMat( matrix& source, Mat& destiny){
 
-//copy values of Mat to int vector
-void Mattovector( Mat& source, vector<int>& destiny){
-
-    for( int x = 0; x < source.rows; x++){
-       for( int y = 0; y < source.cols; y++){
-           destiny[ x + y ] = int (source.at<uchar>(x,y) );
-       }
-    }
-}
-
-//copy values of int vector to Mat
-void vectortoMat( vector<int>& source, Mat& destiny ){
- for( int x = 0; x < destiny.rows; x++){
+    for( int x = 0; x < destiny.rows; x++){
        for( int y = 0; y < destiny.cols; y++){
-           destiny.at<uchar>(x,y) = source[ x + y ];
+           destiny.at<uchar>(x,y) = (int) source[x][y];
        }
-    }
-}
-
-//copy values of int vector to Mat
-void vectortoMat( vector<double>& source, Mat& destiny ){
- for( int x = 0; x < destiny.rows; x++){
-       for( int y = 0; y < destiny.cols; y++){
-           destiny.at<uchar>(x,y) = int( source[ x + y ] );
-       }
-    }
-}
-
-void get_values( vector<my_Complex>& source, vector<my_Complex>& destiny, int start, int size, int incr){
-
-    int index , counter = 0;
-
-    for( counter, index = start; counter < size; counter++, index = index + incr ){
-
-        destiny[counter] = ( my_Complex( source[index].real, source[index].imag ) );
     }
 }
 
@@ -127,6 +93,67 @@ void Mattomatrix( Mat& source, m_int& destiny){
     }
 }
 
+void Mattomatrix( Mat& source, vector< vector<double> >& destiny){
+
+    for( int x = 0; x < source.rows; x++){
+       for( int y = 0; y < source.cols; y++){
+           destiny[x][y] = (int) source.at<uchar>(x,y);
+       }
+    }
+}
+
+
+void fill_vector( vector<my_Complex>& source, int size){
+    for( int i = 0 ; i < size; ++i){
+        source.push_back( my_Complex(0,0) );
+    }
+}
+
+//copy values of Mat to int vector
+void Mattovector( Mat& source, vector<int>& destiny){
+    int p = 0;
+    for( int x = 0; x < source.rows; x++){
+       for( int y = 0; y < source.cols; y++){
+           destiny[ p ] = int (source.at<uchar>(x,y) );
+           p++;
+       }
+    }
+    cout << "size vector: " << destiny.size() << "\t" << p << endl;
+}
+
+//copy values of int vector to Mat
+void vectortoMat( vector<int>& source, Mat& destiny ){
+ int p = 0;
+ for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           destiny.at<uchar>(x,y) = (int)source[ p ];
+           p++;
+       }
+    }
+    cout << "size vector: " << source.size() << "\t" << p << endl;
+}
+
+//copy values of int vector to Mat
+void vectortoMat( vector<double>& source, Mat& destiny ){
+    int p = 0;
+ for( int x = 0; x < destiny.rows; x++){
+       for( int y = 0; y < destiny.cols; y++){
+           destiny.at<uchar>(x,y) = int( source[ p ] );
+           p++;
+       }
+    }
+     cout << "size vector: " << source.size() << "\t" << p << endl;
+}
+
+void get_values( vector<my_Complex>& source, vector<my_Complex>& destiny, int start, int size, int incr){
+
+    int index , counter = 0;
+
+    for( counter, index = start; counter < size; counter++, index = index + incr ){
+
+        destiny[counter] = ( my_Complex( source[index].real, source[index].imag ) );
+    }
+}
 
 void displayMat( Mat& img_src, string namewindow ){
     namedWindow( namewindow, CV_WINDOW_AUTOSIZE );
@@ -270,9 +297,13 @@ void fft1d( vector<my_Complex>& source ){
     fft1d( even );
     fft1d( odd );
 
+//    int test = 10;
+//    cout << double(test)/double(N) << " ";
+
     for( int i = 0 ; i < N/2 ; ++i){
 
-        double theta = 2 * PI * i / N;
+        double theta = -2 * PI * double(i) / N;
+        //cout << theta << "\t" ;
 
         my_Complex th( cos(theta), sin(theta) );
 
@@ -302,6 +333,76 @@ void ffti1d( vector<my_Complex>& source ){
     }
 }
 
+void fft2d( vector<my_Complex>& source, int rows, int cols ){
+
+    my_Complex** m_source;
+
+    m_source = (my_Complex**)malloc( rows * sizeof(my_Complex*) );
+
+    for( int i = 0; i < 4; ++i){
+        m_source[i] = (my_Complex*) malloc( cols * sizeof(my_Complex ) );
+    }
+
+    int p = 0;
+    for( int i = 0; i < rows; ++i){
+        for( int j = 0; j < cols; ++j){
+            m_source[i][j] = source[ p ];
+            cout << p << endl;
+            p++;
+        }
+    }
+
+    //Rows
+    for( int i = 0; i < rows; ++i){
+        my_Complex* m_row;
+        m_row = (my_Complex*) malloc( cols * sizeof(my_Complex ) );
+        for( int j = 0; j < cols; ++j){
+            m_row[j] = m_source[i][j];
+
+        }
+        vector<my_Complex> v_row;
+        for(int k = 0; k < cols; ++k){
+            v_row.push_back( m_row[k] );
+        }
+        fft1d( v_row );
+
+        for( int j = 0; j < cols; ++j){
+            m_source[i][j] = v_row[j];
+
+        }
+    }
+
+    //Rows
+    for( int i = 0; i < cols; ++i){
+        my_Complex* m_row;
+        m_row = (my_Complex*) malloc( rows * sizeof(my_Complex ) );
+        for( int j = 0; j < rows; ++j){
+            m_row[j] = m_source[j][i];
+
+        }
+        vector<my_Complex> v_row;
+        for(int k = 0; k < rows; ++k){
+            v_row.push_back( m_row[k] );
+        }
+
+        fft1d( v_row );
+
+        for( int j = 0; j < rows; ++j){
+            m_source[j][i] = v_row[j];
+
+        }
+    }
+
+    p = 0;
+    for( int i = 0; i < rows; ++i){
+        for( int j = 0; j < cols; ++j){
+            source[p] = m_source[i][j];
+            p++;
+        }
+    }
+
+}
+
 void MattoComplex(Mat& source, vector<my_Complex>& destiny){
 
     for( int x = 0; x < source.rows; x++){
@@ -309,6 +410,8 @@ void MattoComplex(Mat& source, vector<my_Complex>& destiny){
            destiny.push_back( my_Complex( int(source.at<uchar>(x,y)), 0 ) );
        }
     }
+
+    cout << "size of vector: " << destiny.size() << endl;
 
 }
 
@@ -490,7 +593,7 @@ void ImageViewer:: Histogram(){
 
     cout << sfilename << endl;
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
     imwrite( folder_path + true_name + "_grayscale.jpg", image_src);
@@ -569,7 +672,7 @@ void ImageViewer:: Filter1(){
 
     string prefix = "sfilter";
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
 
@@ -622,7 +725,7 @@ void ImageViewer:: Filter2(){
 
     string prefix = "sfilter";
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
     Mat image_src = imread( sfilename, 0); // 0, grayscale  >0, color
@@ -658,7 +761,7 @@ void ImageViewer:: Filter2(){
 }
 void ImageViewer:: Filter3(){
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
     //Median Filter
@@ -696,44 +799,43 @@ void ImageViewer:: Filter3(){
 
 void ImageViewer:: Fourier(){
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
     Mat f_source = imread( sfilename, 0);
-    Mat f_reverted = imread( sfilename, 0);
-
-    //matrix C_r( f_source.rows, vector<double>(f_source.cols));
-    //matrix C_i( f_source.rows, vector<double>(f_source.cols));
 
     vector<int>  v_source( f_source.rows * f_source.cols);
     vector<double>  v_real( f_source.rows * f_source.cols);
     vector<double>  v_imag( f_source.rows * f_source.cols);
 
+    cout << v_source.size() << "\t" << v_real.size() << "\t" << v_imag.size() << endl;
+
     Mattovector( f_source, v_source );
 
-    time_t timer = time(0);
-
-    //my_fourier_1d( v_source, v_real, v_imag );
+    //time_t timer = time(0);
 
     vector<my_Complex> v_complex;
     MattoComplex( f_source, v_complex );
 
     fft1d( v_complex );
 
-    //vector<int> magnitude;
+    cout << "End FFT1D\n";
 
-    for( int i = 0 ; i < v_complex.size() ; ++i){
-        v_complex[i].real =  12 * log2( 1 + sqrtf( powf(v_complex[i].real,2) ));
-        //cout  << v_complex[i].real << endl;
+    //fft2d( v_complex, f_source.rows, f_source.cols);
+
+
+    for( unsigned int i = 0 ; i < v_complex.size() ; ++i){
+        v_complex[i].real =   log2( 1 + sqrtf( powf(v_complex[i].real,2) + powf(v_complex[i].imag,2) ));
+        //cout  << v_complex[i].real << "\t";
     }
 
     ComplextoMat( v_complex, f_source);
-
+/*
     for( int i = 0 ; i < f_source.rows ; ++i ){
         for( int j = 0 ; j < f_source.cols ; ++j){
             cout << (int)f_source.at<uchar>(i,j) << "\t" << v_complex[i+j].real << endl;
         }
-    }
+    }*/
 
     int limx = f_source.rows/2, limy = f_source.cols/2;
     Mat temp = imread( sfilename, 0) ;
@@ -763,11 +865,186 @@ void ImageViewer:: Fourier(){
         pi++;
     }
 */
+    normalize(f_source, f_source, 0, 1, CV_MINMAX);
+
+    cout << "Writing file\n";
+
     imwrite( folder_path + true_name + "_fourier.jpg", f_source);
+
+    cout << "End Writing file\n";
 
 }
 
+string type2str(int type) {
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+
+  return r;
+}
+
 void ImageViewer:: LowPass(){
+
+    string true_name = sfilename.substr(23);
+    true_name = true_name.substr(0, true_name.find(".") );
+
+    cout << true_name << endl;
+
+        Mat I = imread(sfilename, CV_LOAD_IMAGE_GRAYSCALE);
+
+        Mat padded;                            //expand input image to optimal size
+        int m = getOptimalDFTSize( I.rows );
+        int n = getOptimalDFTSize( I.cols ); // on the border add zero values
+        copyMakeBorder(I, padded, 0, m - I.rows, 0, n - I.cols, BORDER_CONSTANT, Scalar::all(0));
+
+        Mat planes[] = {Mat_<float>(padded), Mat::zeros(padded.size(), CV_32F)};
+        Mat complexI;
+        merge(planes, 2, complexI);         // Add to the expanded another plane with zeros
+
+        dft(complexI, complexI);            // this way the result may fit in the source matrix
+
+        //displayMat( complexI, "Complex I");
+
+        // compute the magnitude and switch to logarithmic scale
+        // => log(1 + sqrt(Re(DFT(I))^2 + Im(DFT(I))^2))
+        split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
+        magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
+        Mat magI = planes[0];
+
+        magI += Scalar::all(1);                    // switch to logarithmic scale
+        log(magI, magI);
+
+        // crop the spectrum, if it has an odd number of rows or columns
+        magI = magI(Rect(0, 0, magI.cols & -2, magI.rows & -2));
+
+        // rearrange the quadrants of Fourier image  so that the origin is at the image center
+        int cx = magI.cols/2;
+        int cy = magI.rows/2;
+
+
+        //normalize(magI, magI, 0, 1, CV_MINMAX);
+        //displayMat( magI, "Mag I");
+
+
+        Mat q0(magI, Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
+        //normalize(q0, q0, 0, 1, CV_MINMAX);
+        //displayMat( q0, "q 0");
+        Mat q1(magI, Rect(cx, 0, cx, cy));  // Top-Right
+        //normalize(q1, q1, 0, 1, CV_MINMAX);
+        //displayMat( q1, "q 1");
+        Mat q2(magI, Rect(0, cy, cx, cy));  // Bottom-Left
+        //normalize(q2, q2, 0, 1, CV_MINMAX);
+        //displayMat( q2, "q 2");
+        Mat q3(magI, Rect(cx, cy, cx, cy)); // Bottom-Right
+        //normalize(q3, q3, 0, 1, CV_MINMAX);
+        //displayMat( q3, "q 3");
+
+        Mat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
+        q0.copyTo(tmp);
+        //displayMat( tmp, "tmp1");
+        q3.copyTo(q0);
+        //displayMat( tmp, "tmp2");
+        tmp.copyTo(q3);
+        //displayMat( tmp, "tmp3");
+        q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
+        //displayMat( tmp, "tmp4");
+        q2.copyTo(q1);
+        //displayMat( tmp, "tmp5");
+        tmp.copyTo(q2);
+        //displayMat( tmp, "tmp6");
+
+        //normalize(tmp, tmp, 0, 1, CV_MINMAX);
+
+        //displayMat( tmp, "tmpFinal");
+
+        //displayMat( magI, "Mag I2");
+
+
+        normalize(magI, magI, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
+                                                // viewable image form (float between values 0 and 1).
+
+        //displayMat( magI, "Mag I3");
+
+        Mat myI;
+
+        magI.convertTo(myI, CV_8UC1, 255.0);
+/*
+        vector< vector<double> > m_myI(magI.rows, vector<double>(magI.cols));
+
+        Mattomatrix( magI,m_myI );
+
+        matrixtoMat( m_myI, myI);
+
+
+        /*int mayor = 0;
+
+        for( int i = 0; i < 377; ++i){
+            for( int j = 0; j < 549; ++j){
+
+                myI.at<uchar>(i,j) = (unsigned int) magI.at<uchar>(i,j);
+
+                //cout << (int) myI.at<uchar>(i,j) << " - ";
+                //cout << (int) magI.at<uchar>(i,j) << "\t";
+
+                mayor = (mayor< (int) magI.at<uchar>(i,j) ) ? (int) magI.at<uchar>(i,j) : mayor;
+            }
+            //cout << ";";
+        }
+
+        cout << mayor << endl;
+
+        for( int i = 0; i < 377; ++i){
+            for( int j = 0; j < 549; ++j){
+
+                myI.at<uchar>(i,j) = int(myI.at<uchar>(i,j)) / 3 ;
+
+            }
+        }
+/*
+        for( int i = 0; i < myI.rows; ++i){
+            for( int j = 0; j < myI.cols; ++j){
+                myI.at<uchar>(i,j) = ((int) magI.at<uchar>(i,j) / mayor) * 255 ;
+            }
+        }
+
+*/
+        cout << (int)myI.at<uchar>(190,225) << "\t" << magI.at<uchar>(190,225) << endl;
+        cout << magI.type() << endl;
+
+        string ty =  type2str( 5 );
+        cout << ty << endl;
+
+        //magI.convertTo( myI, CV_32SC1);
+/*
+        vector<int> compression_params;
+            compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(9);
+*/
+        displayMat( myI, "MyI");
+
+        cout << folder_path + true_name + "_fourier.jpg" << endl;
+
+        imwrite( folder_path + true_name + "_fourier.jpg", myI);
+
+        //imshow("Input Image"       , I   );    // Show the result
+        imshow("spectrum magnitude", magI);
+        waitKey();
+
 
 }
 
@@ -777,7 +1054,7 @@ void ImageViewer:: HighPass(){
 
 void ImageViewer:: Erosion(){
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
     Mat f_morph = imread( sfilename, 0);
@@ -809,7 +1086,7 @@ void ImageViewer:: Erosion(){
 
 void ImageViewer:: Dilation(){
 
-    string true_name = sfilename.substr(43);
+    string true_name = sfilename.substr(23);
     true_name = true_name.substr(0, true_name.find(".") );
 
     Mat f_morph = imread( sfilename, 0);
