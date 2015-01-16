@@ -6,104 +6,131 @@
 
 #include <unistd.h>   //_getch*/
 #include <termios.h>  //_getch*/
-
+#include <vector>
 
 #define tampob 100
 
-#define lim1 -100
-#define lim2 100
+double lim1 = -100;
+double lim2 = 100;
 
 #define nrogen 100
 
 #define tipo 1 // max(1), min(2)
 
-double mejorglobal ; double *mejorlocal=new double [tampob];
-
-typedef struct particula_   //estructura de particula
-{
-	double valor;				
-	double aptitud;			 
-	double velocidad;
-	double posicion;
-}particula;
+#define nvar 2
 
 using namespace std;
 
-particula* inicializar( particula *actual); 
-double aptitud(double valor);               
-double calvel( particula* &actual);      
-double reducir(double valor);           
-double vab(double valor);               
+vector<double> mejorglobal ; vector< vector< double > > mejorlocal (tampob);
+
+typedef struct particula_   //estructura de particula
+{
+	vector<double> valor;				
+	double aptitud;			 
+	vector<double> velocidad;
+
+}particula;
+
+
+
+void inicializar( vector<particula>& actual); 
+double aptitud( vector<double> valor);               
+void calvel( vector<particula> &actual);
+double vab( double valor);    
+
+void init_rand(double lim1, double lim2, vector<double>& vec){
+    
+    default_random_engine rng(random_device{}());       
+    uniform_real_distribution<double> dist( lim1, lim2 );
+
+    for( int i = 0; i < vec.size(); ++i ){
+        vec[i] = dist(rng);
+    }
+}
 
 char getch();
 
 int main(int argc, char *argv[])
 {
-    particula* poblacion = new particula [tampob];
-    poblacion = inicializar(poblacion);
+    vector<particula> poblacion(tampob) ;
+    inicializar(poblacion);
 
     // getch(); 
 
-    int global = calvel(poblacion);
+    calvel(poblacion);
     
     return 0;
 }
 
 //queremos minimizar entonces menor <
-particula* inicializar( particula *actual){
+void inicializar( vector<particula>& actual){
 
-    default_random_engine rng(random_device{}());       
-    uniform_real_distribution<double> dist( lim1, lim2 );
+    //Inicialización de vectores según el número de variables
+    for (int i = 0; i < tampob; ++i){
+        //mejorglobal[i].resize(nvar);
 
-    default_random_engine rng2(random_device{}());       
-    uniform_real_distribution<double> dist2( -1 * lim2, lim1 );
-    
-    double mejor = 0;
+        mejorlocal[i].resize(nvar);
+
+        actual[i].valor.resize(nvar);
+        actual[i].velocidad.resize(nvar);
+    }
+
+    //Inicialización global
+    mejorglobal.resize(nvar);
+    init_rand( lim1, lim2, mejorglobal );
+
     cout<<"generacion 0 \n";
 
     int dec = 15; 
 
     cout << setw(dec) << "VALOR" << setw(dec) << "APTITUD" << setw(dec) << "VELOCIDAD" << setw(dec) << "MEJOR LOCAL" << endl;
 
-    mejorglobal = dist(rng);
-
     for( int i = 0; i < tampob; i++){
 
-        actual[i].valor     = dist(rng);
-        actual[i].aptitud   = aptitud(actual[i].valor);
-        actual[i].velocidad = dist(rng) / 10 ;
-         
-        mejorlocal[i] = actual[i].valor;
+        init_rand(lim1, lim2, actual[i].valor);
+        actual[i].aptitud = aptitud(actual[i].valor );
+        init_rand(lim1/10, lim2/10, actual[i].valor);
+        
+        for( int j = 0; j < mejorlocal[0].size(); ++j){
+            mejorlocal[i][j] = actual[i].valor[i];
+        }
         
         if( tipo == 1){ 
-            if( aptitud(actual[i].valor) > aptitud(mejorglobal) && mejorglobal >= lim1 ) { 
-                mejorglobal = actual[i].valor; 
+            if( aptitud(actual[i].valor) > aptitud(mejorglobal) ) { 
+            
+                for( int j = 0; j < mejorlocal[0].size(); ++j){
+                    mejorlocal[i][j] = actual[i].valor[i];
+                }
+
             }
         }
 
         else if( tipo == 2){ 
-            if( aptitud(actual[i].valor) < aptitud(mejorglobal) && mejorglobal >= lim1  ) { 
-                mejorglobal = actual[i].valor; 
+            if( aptitud(actual[i].valor) < aptitud(mejorglobal)  ) { 
+                
+                for( int j = 0; j < mejorlocal[0].size(); ++j){
+                    mejorlocal[i][j] = actual[i].valor[i];
+                }
+
             }
         }
              
-        cout << setw(dec) << actual[i].valor << setw(dec) <<actual[i].aptitud << setw(dec) << actual[i].velocidad;
+        cout << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] << setw(dec) <<actual[i].aptitud << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1] ;
                  
         // if( mejorlocal[i] > actual[i].valor && mejorlocal[i] > 0 ) {
         //     mejorlocal[i] = actual[i].valor;
         // }
              
-        cout << setw(dec) << mejorlocal[i] << "\n";
+        cout << setw(dec) << mejorlocal[i][0] << setw(dec) << mejorlocal[i][1] << "\n";
     }
     
-    cout << "mejor global: " << mejorglobal << endl;
+    cout << "mejor global: " << mejorglobal[0] << mejorglobal[1] << endl;
 
-    return actual;
-
+    //return actual;
 }
 
 //calculamos los nuevos valores y velocidades
-double calvel( particula* &actual){
+void calvel( vector<particula> &actual){
 
     default_random_engine rng(random_device{}());       
     uniform_real_distribution<double> dist( lim1, lim2 );
@@ -179,18 +206,25 @@ double calvel( particula* &actual){
 
         }       
        
-       cout << "mejor global generacion "<< j << " : " << mejorglobal << endl;
+       cout << "mejor global generacion "<< j << " : " << mejorglobal[0] << mejorglobal[1] << endl;
 
     }
     
-    cout << "mejor global : " << mejorglobal << endl;
+    cout << "mejor global: " << mejorglobal[0] << mejorglobal[1] << endl;
 
-    return mejorglobal;
+    // return mejorglobal;
 }
 
 //funcion de aptitud utilizada
-double aptitud(double valor){
-    return ( 1.0 / ( 1.0 + exp(-valor) ) );
+double aptitud(vector<double>& valor){
+    double val;
+
+    for (int i = 0; i < valor.size(); ++i)    {
+        val += ( 1.0 / ( 1.0 + exp(-valor[i]) ) ) ;
+    }
+
+    return val;
+
     //return sin(valor);
     //return 1/ powf( valor, 2 );
 }
