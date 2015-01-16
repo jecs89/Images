@@ -7,10 +7,11 @@
 #include <unistd.h>   //_getch*/
 #include <termios.h>  //_getch*/
 
+
 #define tampob 100
 
-#define lim1 -3.14
-#define lim2 3.14
+#define lim1 -100
+#define lim2 100
 
 #define nrogen 100
 
