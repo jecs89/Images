@@ -9,11 +9,12 @@
 #include <vector>
 
 #define tampob 100
+#define PI 3.14156
 
-double lim1 = -100;
-double lim2 = 100;
+double lim1 = -PI;
+double lim2 = PI;
 
-#define nrogen 100
+#define nrogen 50
 
 #define tipo 1 // max(1), min(2)
 
@@ -31,10 +32,8 @@ typedef struct particula_   //estructura de particula
 
 }particula;
 
-
-
 void inicializar( vector<particula>& actual); 
-double aptitud( vector<double> valor);               
+double aptitud( vector<double> &    valor);               
 void calvel( vector<particula> &actual);
 double vab( double valor);    
 
@@ -78,18 +77,19 @@ void inicializar( vector<particula>& actual){
     //Inicialización global
     mejorglobal.resize(nvar);
     init_rand( lim1, lim2, mejorglobal );
+    //mejorglobal[0] = mejorglobal[1] = 0;
 
     cout<<"generacion 0 \n";
 
     int dec = 15; 
 
-    cout << setw(dec) << "VALOR" << setw(dec) << "APTITUD" << setw(dec) << "VELOCIDAD" << setw(dec) << "MEJOR LOCAL" << endl;
+    cout << setw(dec*2) << "VALOR" << setw(dec) << "APTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
 
     for( int i = 0; i < tampob; i++){
 
         init_rand(lim1, lim2, actual[i].valor);
         actual[i].aptitud = aptitud(actual[i].valor );
-        init_rand(lim1/10, lim2/10, actual[i].valor);
+        init_rand(lim1/10, lim2/10, actual[i].velocidad);
         
         for( int j = 0; j < mejorlocal[0].size(); ++j){
             mejorlocal[i][j] = actual[i].valor[i];
@@ -124,7 +124,7 @@ void inicializar( vector<particula>& actual){
         cout << setw(dec) << mejorlocal[i][0] << setw(dec) << mejorlocal[i][1] << "\n";
     }
     
-    cout << "mejor global: " << mejorglobal[0] << mejorglobal[1] << endl;
+    cout << "mejor global: " << mejorglobal[0] << "\t" << mejorglobal[1] << endl;
 
     //return actual;
 }
@@ -158,23 +158,26 @@ void calvel( vector<particula> &actual){
             
             //calculamos velocidad nueva y posicion nueva
 
-            double temp_vel = actual[i].velocidad;
+            vector<double> temp_vel = actual[i].velocidad;
 
             // cout << "Temporal: " << actual[i].velocidad << "\n";
 
-            actual[i].velocidad = actual[ind].velocidad + tem1 * ( mejorlocal[i]- actual[i].valor ) + tem2 * ( mejorglobal - actual[i].valor );
+            actual[i].velocidad[0] = actual[ind].velocidad[0] + tem1 * ( mejorlocal[i][0]- actual[i].valor[0] ) + tem2 * ( mejorglobal[0] - actual[i].valor[0] );
+            actual[i].velocidad[1] = actual[ind].velocidad[1] + tem1 * ( mejorlocal[i][1]- actual[i].valor[1] ) + tem2 * ( mejorglobal[1] - actual[i].valor[1] );
                                   
-            double temp_val = actual[ind].valor;
+            vector<double> temp_val = actual[ind].valor;
 
             // cout << "Temporal: " << actual[i].valor << "\n";
 
-            actual[ind].valor = actual[ind].valor + actual[i].velocidad;
+            actual[ind].valor[0] = actual[ind].valor[0] + actual[i].velocidad[0];
+            actual[ind].valor[1] = actual[ind].valor[1] + actual[i].velocidad[1];
 
             // cout << "Después: " << actual[i].valor << "\n";
 
-            if( actual[ind].valor < lim1 || actual[ind].valor > lim2 ){
+            if( actual[ind].valor[0] < lim1 || actual[ind].valor[1] < lim1 || actual[ind].valor[0] > lim2 || actual[ind].valor[1] > lim2 ){
                 actual[ind].valor = temp_val;
-                actual[i].velocidad = actual[i].velocidad * -1 ;
+                actual[i].velocidad[0] = actual[i].velocidad[0] * -1 ;
+                actual[i].velocidad[1] = actual[i].velocidad[1] * -1 ;
             }
 
             // cout<< setw(dec) << tem1 << setw(dec) << tem2 << setw(dec) << setw(dec) << actual[i].valor << setw(dec) << aptitud(actual[i].valor)  << setw(dec) << actual[i].velocidad;
@@ -206,21 +209,21 @@ void calvel( vector<particula> &actual){
 
         }       
        
-       cout << "mejor global generacion "<< j << " : " << mejorglobal[0] << mejorglobal[1] << endl;
+       cout << "mejor global generacion "<< j << " : " << mejorglobal[0] << "\t" << mejorglobal[1] << endl;
 
     }
     
-    cout << "mejor global: " << mejorglobal[0] << mejorglobal[1] << endl;
+    cout << "mejor global: " << mejorglobal[0] << "\t" << mejorglobal[1] << endl;
 
     // return mejorglobal;
 }
 
 //funcion de aptitud utilizada
 double aptitud(vector<double>& valor){
-    double val;
+    double val = 0;
 
     for (int i = 0; i < valor.size(); ++i)    {
-        val += ( 1.0 / ( 1.0 + exp(-valor[i]) ) ) ;
+        val += 1/valor[i] ;//( 1.0 / ( 1.0 + exp(-valor[i]) ) ) ; //sin(valor[i]);
     }
 
     return val;
