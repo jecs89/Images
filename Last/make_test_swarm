@@ -1,0 +1,2 @@
+all:
+	g++ -o testing_swarm_ff testing_swarm_ff.cpp -std=c++11
