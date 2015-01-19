@@ -116,10 +116,30 @@ void inicializar( vector<particula>& actual){
     //Inicialización global
     mejorglobal.valor.resize(nvar);
     init_rand( lim1, lim2, mejorglobal.valor );
-    mejorglobal.aptitud = aptitud( mejorglobal.valor);
+
+    int idx = 0;
+    for( int x = 0; x < input_num; ++x){
+        for( int y = 0; y < hidden_num; ++y){
+            InputPeso[x][y] = mejorglobal.valor[idx] ;
+            idx++;
+        }
+    }
+
+    idx = 0;
+    for( int x = 0; x < hidden_num; ++x){
+       for( int y = 0; y < output_num; ++y){
+            HiddenPeso[x][y] = mejorglobal.valor[idx] ;
+            idx++;
+        }
+    }
+
+    FeedForward();
+
+    mejorglobal.aptitud = aptitud( mejorglobal.valor );
 
     // cout << "vec global: ";
     // print(mejorglobal.valor);
+    cout << mejorglobal.aptitud << endl;
 
    // mejorglobal[0] = mejorglobal[1] = 0;
 
@@ -127,13 +147,17 @@ void inicializar( vector<particula>& actual){
 
     int dec = 15; 
 
-    cout << setw(dec*2) << "VALOR" << setw(dec) << "APTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
+    cout << setw(dec*2) << "VALOR" << setw(dec) << "PAPTITUD" << setw(dec) << "AAPTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
 
     for( int i = 0; i < tampob; i++){
 
         init_rand(lim1, lim2, actual[i].valor);
         init_rand(lim1/100, lim2/100, actual[i].velocidad);
-        actual[i].aptitud = aptitud( actual[i].valor );
+        // actual[i].aptitud = aptitud( actual[i].valor );
+
+        for( int j = 0; j < nvar; ++j){
+            mejorlocal[i].valor[j] = actual[i].valor[j];
+        }
 
         int idx = 0;
         for( int x = 0; x < input_num; ++x){
@@ -153,35 +177,36 @@ void inicializar( vector<particula>& actual){
 
         FeedForward();
         
-        for( int j = 0; j < nvar; ++j){
-            mejorlocal[i].valor[j] = actual[i].valor[j];
-        }
+        actual[i].aptitud = aptitud( actual[i].valor );
+        mejorlocal[i].aptitud = aptitud( mejorlocal[i].valor );
 
         if( tipo == 1){ 
-            if( actual[i].aptitud > mejorglobal.aptitud ) { 
+            if( mejorlocal[i].aptitud > mejorglobal.aptitud ) { 
                 for( int j = 0; j < nvar; ++j){
-                    mejorglobal.valor[j] = actual[i].valor[j];
+                    mejorglobal.valor[j] = mejorlocal[i].valor[j];
                 }
-                mejorglobal.aptitud = aptitud( mejorglobal.valor);
+                mejorglobal.aptitud = mejorlocal[i].aptitud;
             }
         }
 
         else if( tipo == 2){ 
             // cout << "Traza\n";
             // cout << actual[i].aptitud << "\t" << mejorglobal.aptitud << endl;
-            if( actual[i].aptitud < mejorglobal.aptitud  ) { 
+            if( mejorlocal[i].aptitud < mejorglobal.aptitud  ) { 
 
                 for( int j = 0; j < nvar; ++j){
-                    mejorglobal.valor[j] = actual[i].valor[j];
+                    mejorglobal.valor[j] = mejorlocal[i].valor[j];
                 }
-                mejorglobal.aptitud = aptitud( mejorglobal.valor);
+                mejorglobal.aptitud = mejorlocal[i].aptitud;
             }
         }
              
-        cout << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] << setw(dec) << actual[i].aptitud << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1] ;
+        cout << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] 
+             << setw(dec) << actual[i].aptitud << setw(dec) << aptitud(actual[i].valor)
+             << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1] ;
                  
         cout << setw(dec) << mejorlocal[i].valor[0] << setw(dec) << mejorlocal[i].valor[1] << "\n";
-    }
+    }   
     
     cout << "mejor global: " << mejorglobal.valor[0] << "\t" << mejorglobal.valor[1] << "\t aptitud: " << mejorglobal.aptitud << endl;
 
@@ -205,7 +230,7 @@ void calvel( vector<particula> &actual){
 
        cout<<"Generacion: " << gen + 1 << endl; 
 
-       cout << setw(dec) << "R1" << setw(dec) << "R2" << setw(dec*2) << "VALOR" << setw(dec) << "APTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
+       cout << setw(dec) << "R1" << setw(dec) << "R2" << setw(dec*2) << "VALOR" << setw(dec) << "PAPTITUD" << setw(dec) << "AAPTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
 
         // init_ptr( -1, 1, InputPeso, input_num, hidden_num );
         // init_ptr( -1, 1, HiddenPeso, hidden_num, output_num );
@@ -265,7 +290,12 @@ void calvel( vector<particula> &actual){
                 }
             }
 
-            cout<< setw(dec) << tem1 << setw(dec) << tem2 << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] << setw(dec) << aptitud(actual[i].valor)  << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1];
+            // actual[i].aptitud = aptitud( actual[i].valor );
+
+            // cout<< setw(dec) << tem1 << setw(dec) << tem2 << setw(dec) << actual[i].valor[0] 
+            //     << setw(dec) << actual[i].valor[1] << setw(dec) << (actual[i].aptitud) 
+            //     << setw(dec) << aptitud(actual[i].valor)  << setw(dec) << actual[i].velocidad[0] 
+            //     << setw(dec) << actual[i].velocidad[1];
 
 
             int idx = 0;
@@ -286,8 +316,9 @@ void calvel( vector<particula> &actual){
 
             FeedForward();
 
-
             actual[i].aptitud = aptitud( actual[i].valor );
+            mejorlocal[i].aptitud = aptitud( mejorlocal[i].valor );
+            
             // mejorlocal[i].aptitud = aptitud(mejorlocal[i].valor);
             // mejorglobal.aptitud = aptitud(mejorglobal.valor);
 
@@ -300,14 +331,14 @@ void calvel( vector<particula> &actual){
                     for( int j = 0; j < nvar; ++j){
                        mejorlocal[i].valor[j] = actual[i].valor[j];
                     }
-                    mejorlocal[i].aptitud = aptitud(mejorlocal[i].valor);
+                    mejorlocal[i].aptitud = actual[i].aptitud;
                 }
 
                 if( mejorlocal[i].aptitud > mejorglobal.aptitud ) {
                     for( int j = 0; j < nvar; ++j){
                        mejorglobal.valor[j] = mejorlocal[i].valor[j];
                     }
-                    mejorglobal.aptitud = aptitud( mejorglobal.valor);
+                    mejorglobal.aptitud = mejorlocal[i].aptitud;
                 }
             }
 
@@ -317,7 +348,7 @@ void calvel( vector<particula> &actual){
                     for( int j = 0; j < nvar; ++j){
                        mejorlocal[i].valor[j] = actual[i].valor[j];
                     }
-                    mejorlocal[i].aptitud = aptitud(mejorlocal[i].valor);
+                    mejorglobal.aptitud = actual[i].aptitud;
                 }
 
                 // cout << "//" << aptitud(mejorlocal[i]) << "vs" << aptitud(mejorglobal) << endl;
@@ -326,15 +357,22 @@ void calvel( vector<particula> &actual){
                     for( int j = 0; j < nvar; ++j){
                        mejorglobal.valor[j] = mejorlocal[i].valor[j];
                     }
-                    mejorglobal.aptitud = aptitud( mejorglobal.valor);
+                    mejorglobal.aptitud = mejorlocal[i].aptitud;
                 }
             }
+
+            cout<< setw(dec) << tem1 << setw(dec) << tem2 << setw(dec) << actual[i].valor[0] 
+                << setw(dec) << actual[i].valor[1] << setw(dec) << (actual[i].aptitud) 
+                << setw(dec) << aptitud(actual[i].valor)  << setw(dec) << actual[i].velocidad[0] 
+                << setw(dec) << actual[i].velocidad[1];
                     
             cout << setw(dec) << mejorlocal[i].valor[0] << setw(dec) << mejorlocal[i].valor[1] << endl;
 
         }       
+
+        // mejorglobal.aptitud = aptitud( mejorglobal.valor);
        
-       cout << "mejor global generacion "<< gen << " : " << mejorglobal.valor[0] << "\t" << mejorglobal.valor[1] << "\t aptitud: " << mejorglobal.aptitud << endl;
+       cout << "mejor global generacion "<< gen+1 << " : " << mejorglobal.valor[0] << "\t" << mejorglobal.valor[1] << "\t aptitud: " << mejorglobal.aptitud << endl;
 
     }
     
