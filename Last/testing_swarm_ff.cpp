@@ -8,7 +8,7 @@
 #include <termios.h>  //_getch*/
 #include <vector>
 
-#define tampob 5
+#define tampob 3
 #define PI 3.14156
 
 double lim1 = -1;
@@ -20,8 +20,6 @@ double lim2 = 1;
 
 using namespace std;
 
-vector<double> mejorglobal ; vector< vector< double > > mejorlocal (tampob);
-
 typedef struct particula_   //estructura de particula
 {
 	vector<double> valor;				
@@ -29,6 +27,8 @@ typedef struct particula_   //estructura de particula
 	vector<double> velocidad;
 
 }particula;
+
+particula mejorglobal ; vector< particula > mejorlocal (tampob);
 
 void inicializar( vector<particula>& actual); 
 double aptitud( vector<double> &    valor);               
@@ -62,13 +62,15 @@ double **create_array( int Row, int Col );
 void init_ptr( double lim1, double lim2, double**& ptr, int rows, int cols);
 void init_ptr( double lim1, double lim2, double*& ptr, int size);
 
-
 // void arrtoptr(double arr[], double* &ptr, int size);
 // void ptrtoarr(double* &ptr, double(& arr)[], int size);
 
 void FeedForward(void);
 double Sigmoid( double num );
 double Random( int High, int Low );
+
+template <typename T>
+void print( vector<T>& vec);
 
 
 int main(int argc, char *argv[])
@@ -100,29 +102,25 @@ void inicializar( vector<particula>& actual){
     OBias = create_array( output_num );
 
     InputNudo = aInputNudo;
-    // HiddenNudo = aHiddenNudo;
-    //OutputNudo = aOutputNudo;
     Target = aTarget;
-
-    // init_ptr( -1, 1, InputPeso, input_num, hidden_num );
-    // init_ptr( -1, 1, HiddenPeso, hidden_num, output_num );
-
-    // init_ptr( 0, 1, HBias, hidden_num);
-    // init_ptr( 0, 1, OBias, output_num);
 
     //Inicialización de vectores según el número de variables
     for (int i = 0; i < tampob; ++i){
-        //mejorglobal[i].resize(nvar);
 
-        mejorlocal[i].resize(nvar);
+        mejorlocal[i].valor.resize(nvar);
 
         actual[i].valor.resize(nvar);
         actual[i].velocidad.resize(nvar);
     }
 
     //Inicialización global
-    mejorglobal.resize(nvar);
-    init_rand( lim1, lim2, mejorglobal );
+    mejorglobal.valor.resize(nvar);
+    init_rand( lim1, lim2, mejorglobal.valor );
+    mejorglobal.aptitud = aptitud( mejorglobal.valor);
+
+    // cout << "vec global: ";
+    // print(mejorglobal.valor);
+
    // mejorglobal[0] = mejorglobal[1] = 0;
 
     cout<<"generacion 0 \n";
@@ -131,19 +129,11 @@ void inicializar( vector<particula>& actual){
 
     cout << setw(dec*2) << "VALOR" << setw(dec) << "APTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
 
-        // for( int j = 0 ; j < ihPeso; ++j){
-        //     actual[i].valor[j] = InputPeso[i][j];
-        // }
-
-        // for( int j = ihPeso ; j < nvar; ++j){
-        //     actual[i].valor[j] = HiddenPeso[i][j];
-        // }
-
     for( int i = 0; i < tampob; i++){
 
         init_rand(lim1, lim2, actual[i].valor);
-        actual[i].aptitud = aptitud(actual[i].valor );
         init_rand(lim1/100, lim2/100, actual[i].velocidad);
+        actual[i].aptitud = aptitud( actual[i].valor );
 
         int idx = 0;
         for( int x = 0; x < input_num; ++x){
@@ -163,45 +153,38 @@ void inicializar( vector<particula>& actual){
 
         FeedForward();
         
-        for( int j = 0; j < mejorlocal[0].size(); ++j){
-            // mejorlocal[i] = actual[i].valor;
-            mejorlocal[i][j] = actual[i].valor[j];
+        for( int j = 0; j < nvar; ++j){
+            mejorlocal[i].valor[j] = actual[i].valor[j];
         }
-        
-        if( tipo == 1){ 
-            if( aptitud(actual[i].valor) > aptitud(mejorglobal) ) { 
-            
-                // mejorglobal = actual[i].valor;
-                for( int j = 0; j < mejorlocal[0].size(); ++j){
-                    mejorglobal[j] = actual[i].valor[j];
-                }
 
+        if( tipo == 1){ 
+            if( actual[i].aptitud > mejorglobal.aptitud ) { 
+                for( int j = 0; j < nvar; ++j){
+                    mejorglobal.valor[j] = actual[i].valor[j];
+                }
+                mejorglobal.aptitud = aptitud( mejorglobal.valor);
             }
         }
 
         else if( tipo == 2){ 
-            if( aptitud(actual[i].valor) < aptitud(mejorglobal)  ) { 
-                
-                mejorglobal = actual[i].valor;
-                for( int j = 0; j < mejorlocal[0].size(); ++j){
-                    mejorglobal[j] = actual[i].valor[j];
-                }
+            // cout << "Traza\n";
+            // cout << actual[i].aptitud << "\t" << mejorglobal.aptitud << endl;
+            if( actual[i].aptitud < mejorglobal.aptitud  ) { 
 
+                for( int j = 0; j < nvar; ++j){
+                    mejorglobal.valor[j] = actual[i].valor[j];
+                }
+                mejorglobal.aptitud = aptitud( mejorglobal.valor);
             }
         }
              
-        cout << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] << setw(dec) << aptitud(actual[i].valor) << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1] ;
+        cout << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] << setw(dec) << actual[i].aptitud << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1] ;
                  
-        // if( mejorlocal[i] > actual[i].valor && mejorlocal[i] > 0 ) {
-        //     mejorlocal[i] = actual[i].valor;
-        // }
-             
-        cout << setw(dec) << mejorlocal[i][0] << setw(dec) << mejorlocal[i][1] << "\n";
+        cout << setw(dec) << mejorlocal[i].valor[0] << setw(dec) << mejorlocal[i].valor[1] << "\n";
     }
     
-    cout << "mejor global: " << mejorglobal[0] << "\t" << mejorglobal[1] << "\t aptitud: " << aptitud(mejorglobal) << endl;
+    cout << "mejor global: " << mejorglobal.valor[0] << "\t" << mejorglobal.valor[1] << "\t aptitud: " << mejorglobal.aptitud << endl;
 
-    //return actual;
 }
 
 //calculamos los nuevos valores y velocidades
@@ -224,41 +207,27 @@ void calvel( vector<particula> &actual){
 
        cout << setw(dec) << "R1" << setw(dec) << "R2" << setw(dec*2) << "VALOR" << setw(dec) << "APTITUD" << setw(dec*2) << "VELOCIDAD" << setw(dec*2) << "MEJOR LOCAL" << endl;
 
-
-
-            init_ptr( -1, 1, InputPeso, input_num, hidden_num );
-            init_ptr( -1, 1, HiddenPeso, hidden_num, output_num );
-            init_ptr( 0, 1, HBias, hidden_num);
-            init_ptr( 0, 1, OBias, output_num);
-
-            // for( int j = 0 ; j < ihPeso; ++j){
-            //     actual[i].valor[j] = InputPeso[i][j];
-            // }
-
-            // for( int j = ihPeso ; j < nvar; ++j){
-            //     actual[i].valor[j] = HiddenPeso[i][j];
-            // }
-
-
+        // init_ptr( -1, 1, InputPeso, input_num, hidden_num );
+        // init_ptr( -1, 1, HiddenPeso, hidden_num, output_num );
+        
         //iteramos sobre los tampob de particulas
         for( int i = 0; i < tampob; i++){
 
-            int ind = i; 
             tem1 = dist(rng); 
             tem2 = dist(rng);
 
             //calculamos velocidad nueva y posicion nueva
-
             vector<double> temp_vel(nvar);
 
             for (int j = 0; j < nvar; ++j){
                 temp_vel[j] = actual[i].velocidad[j];
             }
 
+
             // cout << "Temporal: " << actual[i].velocidad << "\n";
 
             for (int j = 0; j < nvar; ++j){
-                actual[i].velocidad[j] = actual[ind].velocidad[0] + tem1 * ( mejorlocal[i][j]- actual[i].valor[j] ) + tem2 * ( mejorglobal[j] - actual[i].valor[j] );
+                actual[i].velocidad[j] = actual[i].velocidad[j] + tem1 * ( mejorlocal[i].valor[j]- actual[i].valor[j] ) + tem2 * ( mejorglobal.valor[j] - actual[i].valor[j] );
             }
                                   
             vector<double> temp_val(nvar);
@@ -270,20 +239,20 @@ void calvel( vector<particula> &actual){
             // cout << "Temporal: " << actual[i].valor << "\n";
 
             for (int j = 0; j < nvar; ++j){
-                actual[ind].valor[j] = actual[ind].valor[j] + actual[i].velocidad[j];
+                actual[i].valor[j] = actual[i].valor[j] + actual[i].velocidad[j];
             }
 
             // cout << "Después: " << actual[i].valor << "\n";
 
             bool answer = true, answer2 = true;
             for (int j = 0; j < nvar; ++j){
-                if(actual[ind].valor[j] < lim1){
+                if(actual[i].valor[j] < lim1){
                     answer = false;     break;
                 }
             }
 
             for (int j = 0; j < nvar; ++j){
-                if(actual[ind].valor[j] > lim2){
+                if(actual[i].valor[j] > lim2){
                     answer2 = false;     break;
                 }
             }
@@ -291,66 +260,85 @@ void calvel( vector<particula> &actual){
             if( !answer || !answer2 ){
 
                 for (int j = 0; j < nvar; ++j){
-                    actual[ind].valor[j] = temp_val[j];
+                    actual[i].valor[j] = temp_val[j];
                     actual[i].velocidad[j] = actual[i].velocidad[j] * -1 ;    
                 }
             }
 
             cout<< setw(dec) << tem1 << setw(dec) << tem2 << setw(dec) << actual[i].valor[0] << setw(dec) << actual[i].valor[1] << setw(dec) << aptitud(actual[i].valor)  << setw(dec) << actual[i].velocidad[0] << setw(dec) << actual[i].velocidad[1];
 
-            // for( int j = 0 ; j < ihPeso; ++j){
-            //     InputPeso[i][j] = actual[i].valor[j];
-            // }   
 
-            // for( int j = ihPeso ; j < nvar; ++j){
-            //     HiddenPeso[i][j] = actual[i].valor[j];
-            // }
+            int idx = 0;
+            for( int x = 0; x < input_num; ++x){
+                for( int y = 0; y < hidden_num; ++y){
+                    InputPeso[x][y] = actual[i].valor[idx] ;
+                    idx++;
+                }
+            }
 
-            // FeedForward();
+            idx = 0;
+            for( int x = 0; x < hidden_num; ++x){
+                for( int y = 0; y < output_num; ++y){
+                    HiddenPeso[x][y] = actual[i].valor[idx] ;
+                    idx++;
+                }
+            }
+
+            FeedForward();
+
+
+            actual[i].aptitud = aptitud( actual[i].valor );
+            // mejorlocal[i].aptitud = aptitud(mejorlocal[i].valor);
+            // mejorglobal.aptitud = aptitud(mejorglobal.valor);
+
             
             //calculamos mejorlocal y mejorglobal
             if( tipo == 1){ 
                 cout << "Entreiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii\n";
                 
-                if( aptitud(mejorlocal[i]) < aptitud(actual[i].valor) ){
-                    for( int j = 0; j < mejorlocal[0].size(); ++j){
-                       mejorlocal[i][j] = actual[i].valor[j];
+                if( mejorlocal[i].aptitud < actual[i].aptitud ){
+                    for( int j = 0; j < nvar; ++j){
+                       mejorlocal[i].valor[j] = actual[i].valor[j];
                     }
+                    mejorlocal[i].aptitud = aptitud(mejorlocal[i].valor);
                 }
 
-                if( aptitud(mejorlocal[i]) > aptitud(mejorglobal) ) {
-                    for( int j = 0; j < mejorlocal[0].size(); ++j){
-                       mejorglobal[j] = actual[i].valor[j];
+                if( mejorlocal[i].aptitud > mejorglobal.aptitud ) {
+                    for( int j = 0; j < nvar; ++j){
+                       mejorglobal.valor[j] = mejorlocal[i].valor[j];
                     }
+                    mejorglobal.aptitud = aptitud( mejorglobal.valor);
                 }
             }
 
             else if( tipo == 2){ 
                 // cout << "//" << aptitud(mejorlocal[i]) << "vs" << aptitud(actual[i].valor) << endl;
-                if( aptitud(mejorlocal[i]) > aptitud(actual[i].valor) ){
-                    for( int j = 0; j < mejorlocal[0].size(); ++j){
-                       mejorlocal[i][j] = actual[i].valor[j];
+                if( mejorlocal[i].aptitud > actual[i].aptitud ){
+                    for( int j = 0; j < nvar; ++j){
+                       mejorlocal[i].valor[j] = actual[i].valor[j];
                     }
+                    mejorlocal[i].aptitud = aptitud(mejorlocal[i].valor);
                 }
 
                 // cout << "//" << aptitud(mejorlocal[i]) << "vs" << aptitud(mejorglobal) << endl;
 
-                if( aptitud(mejorlocal[i]) < aptitud(mejorglobal) ) {
-                    for( int j = 0; j < mejorlocal[0].size(); ++j){
-                       mejorglobal[j] = actual[i].valor[j];
+                if( mejorlocal[i].aptitud < mejorglobal.aptitud ) {
+                    for( int j = 0; j < nvar; ++j){
+                       mejorglobal.valor[j] = mejorlocal[i].valor[j];
                     }
+                    mejorglobal.aptitud = aptitud( mejorglobal.valor);
                 }
             }
                     
-            cout << setw(dec) << mejorlocal[i][0] << setw(dec) << mejorlocal[i][1] << endl;
+            cout << setw(dec) << mejorlocal[i].valor[0] << setw(dec) << mejorlocal[i].valor[1] << endl;
 
         }       
        
-       cout << "mejor global generacion "<< gen << " : " << mejorglobal[0] << "\t" << mejorglobal[1] << "\t aptitud: " << aptitud(mejorglobal) << endl;
+       cout << "mejor global generacion "<< gen << " : " << mejorglobal.valor[0] << "\t" << mejorglobal.valor[1] << "\t aptitud: " << mejorglobal.aptitud << endl;
 
     }
     
-        cout << "mejor global: " << mejorglobal[0] << "\t" << mejorglobal[1] << "\t aptitud: " << aptitud(mejorglobal) << endl;
+        cout << "mejor global: " << mejorglobal.valor[0] << "\t" << mejorglobal.valor[1] << "\t aptitud: " << mejorglobal.aptitud << endl;
 
     // return mejorglobal;
 }
@@ -517,5 +505,12 @@ void init_ptr( double lim1, double lim2, double*& ptr, int size){
 
     for( int i = 0; i < size; ++i ){
         ptr[i] = dist(rng);
+    }
+}
+
+template <typename T>
+void print(vector<T>& vec){
+    for( int i = 0; i < vec.size(); ++i){
+        cout << vec[i] << " ";
     }
 }
